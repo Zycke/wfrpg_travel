@@ -1,0 +1,849 @@
+/* =========================
+   Party Sheet Main Styles
+   ========================= */
+
+.party-sheet {
+    font-family: "Signika", sans-serif;
+}
+
+.party-sheet .window-content {
+    background: url("../ui/parchment.jpg") repeat;
+    padding: 0;
+}
+
+/* Add a semi-opaque overlay to make content more readable */
+.party-sheet .sheet-body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(245, 235, 220, 0.7);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* =========================
+   Sheet Header
+   ========================= */
+
+.party-sheet .sheet-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px;
+    background: rgba(120, 46, 34, 0.9);
+    border-bottom: 2px solid #782e22;
+    gap: 10px;
+    flex: 0 0 auto;
+}
+
+.party-sheet .sheet-header .profile-img {
+    flex: 0 0 60px;
+    height: 60px;
+    border: 2px solid #fff;
+    cursor: pointer;
+}
+
+.party-sheet .sheet-header .header-fields {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.party-sheet .sheet-header .charname {
+    margin: 0;
+    border: none;
+}
+
+.party-sheet .sheet-header .charname input {
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    background: transparent;
+    width: 100%;
+    height: 24px;
+    color: #fff;
+}
+
+.party-sheet .current-phase {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #fff;
+}
+
+.party-sheet .phase-status-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.party-sheet .current-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #fff;
+}
+
+.party-sheet .phase-badge {
+    padding: 3px 10px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-weight: bold;
+    text-transform: capitalize;
+    font-size: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.party-sheet .phase-badge:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.party-sheet .status-badge {
+    padding: 3px 10px;
+    border-radius: 5px;
+    background: rgba(76, 175, 80, 0.3);
+    color: #fff;
+    font-weight: bold;
+    font-size: 12px;
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.party-sheet .status-badge.status-camping {
+    background: rgba(33, 150, 243, 0.3);
+    border-color: rgba(33, 150, 243, 0.5);
+}
+
+.party-sheet .status-badge:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.2);
+}
+
+/* =========================
+   Sheet Navigation
+   ========================= */
+
+.party-sheet .sheet-tabs {
+    display: flex;
+    border-bottom: 2px solid #782e22;
+    background: rgba(60, 30, 20, 0.8);
+    flex: 0 0 auto;
+}
+
+.party-sheet .sheet-tabs .item {
+    flex: 1;
+    text-align: center;
+    padding: 8px 10px;
+    border-right: 1px solid rgba(120, 46, 34, 0.5);
+    cursor: pointer;
+    transition: background 0.2s;
+    font-weight: bold;
+    font-size: 13px;
+    color: #f5f5f5;
+}
+
+.party-sheet .sheet-tabs .item:last-child {
+    border-right: none;
+}
+
+.party-sheet .sheet-tabs .item:hover {
+    background: rgba(120, 46, 34, 0.6);
+    color: #fff;
+}
+
+.party-sheet .sheet-tabs .item.active {
+    background: #782e22;
+    color: white;
+}
+
+/* =========================
+   Sheet Body
+   ========================= */
+
+.party-sheet .sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+.party-sheet .sheet-body .tab {
+    display: none;
+}
+
+.party-sheet .sheet-body .tab.active {
+    display: block;
+}
+
+.party-sheet .tab-placeholder {
+    text-align: center;
+    padding: 40px;
+    font-style: italic;
+    color: #666;
+}
+
+/* =========================
+   Party Sections
+   ========================= */
+
+.party-sheet .party-section {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid #782e22;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.party-sheet .party-section h2 {
+    margin: 0 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #782e22;
+    font-size: 16px;
+    color: #782e22;
+}
+
+/* Two-column layout for paired sections */
+.party-sheet .section-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+/* =========================
+   Party Members
+   ========================= */
+
+.party-sheet .party-members {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 60px;
+}
+
+.party-sheet .character-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #782e22;
+    border-radius: 5px;
+}
+
+.party-sheet .character-item img {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #782e22;
+    border-radius: 50%;
+}
+
+.party-sheet .character-item .character-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.party-sheet .character-item .character-name {
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.party-sheet .character-item .character-tb {
+    font-size: 11px;
+    color: #666;
+}
+
+.party-sheet .character-item .remove-character {
+    color: #782e22;
+    cursor: pointer;
+    padding: 4px;
+    font-size: 14px;
+}
+
+.party-sheet .character-item .remove-character:hover {
+    color: #d32f2f;
+}
+
+.party-sheet .empty-party {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border: 2px dashed #782e22;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.3);
+    color: #666;
+}
+
+.party-sheet .empty-party p {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+}
+
+.party-sheet .empty-party i {
+    opacity: 0.3;
+}
+
+/* =========================
+   Status Grid
+   ========================= */
+
+.party-sheet .status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.party-sheet .status-item {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #782e22;
+    border-radius: 5px;
+    padding: 8px;
+}
+
+.party-sheet .status-item.warning {
+    border-color: #d32f2f;
+    background: rgba(255, 235, 238, 0.95);
+}
+
+.party-sheet .status-item label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #782e22;
+    font-size: 13px;
+}
+
+.party-sheet .status-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.party-sheet .status-value .value-display {
+    font-size: 18px;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+}
+
+.party-sheet .status-effects {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(120, 46, 34, 0.3);
+    color: #d32f2f;
+    font-size: 11px;
+    text-align: center;
+}
+
+/* =========================
+   Progress Grid
+   ========================= */
+
+.party-sheet .progress-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.party-sheet .progress-item {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #782e22;
+    border-radius: 5px;
+    padding: 8px;
+}
+
+.party-sheet .progress-item label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+    color: #782e22;
+    font-size: 13px;
+}
+
+.party-sheet .progress-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.party-sheet .progress-value .value-display {
+    font-size: 16px;
+    font-weight: bold;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* =========================
+   Resource Controls
+   ========================= */
+
+.party-sheet .resource-control {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #782e22;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.party-sheet .resource-control:hover {
+    background: #782e22;
+    color: white;
+}
+
+.party-sheet .resource-control i {
+    font-size: 10px;
+}
+
+/* =========================
+   Weather Summary
+   ========================= */
+
+.party-sheet .weather-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.party-sheet .weather-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.party-sheet .weather-item i {
+    color: #782e22;
+    font-size: 14px;
+}
+
+.party-sheet .weather-label {
+    font-weight: bold;
+}
+
+.party-sheet .weather-value {
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: rgba(120, 46, 34, 0.1);
+    font-size: 12px;
+}
+
+.party-sheet .weather-value.temperature-sweltering {
+    background: rgba(211, 47, 47, 0.2);
+    color: #d32f2f;
+    font-weight: bold;
+}
+
+.party-sheet .weather-value.temperature-bitter {
+    background: rgba(33, 150, 243, 0.2);
+    color: #1976d2;
+    font-weight: bold;
+}
+
+.party-sheet .weather-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid #ff9800;
+    border-radius: 5px;
+    color: #e65100;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.party-sheet .weather-warning i {
+    font-size: 14px;
+}
+
+/* =========================
+   Travel Options
+   ========================= */
+
+.party-sheet .travel-options {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.party-sheet .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.party-sheet .checkbox-label:hover {
+    background: rgba(255, 255, 255, 1);
+}
+
+.party-sheet .checkbox-label.indent {
+    margin-left: 24px;
+}
+
+.party-sheet .checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.party-sheet .checkbox-label span {
+    font-weight: bold;
+    font-size: 13px;
+}
+
+/* =========================
+   Responsive Design
+   ========================= */
+
+@media (max-width: 700px) {
+    .party-sheet .status-grid,
+    .party-sheet .progress-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================
+   Journey Tab Styles
+   ========================= */
+
+.party-sheet .journey-planning {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.party-sheet .planning-item {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #782e22;
+    border-radius: 5px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.party-sheet .planning-item.gm-only {
+    border-color: #9c27b0;
+    background: rgba(237, 231, 246, 0.9);
+}
+
+.party-sheet .planning-item label {
+    font-weight: bold;
+    color: #782e22;
+    font-size: 13px;
+}
+
+.party-sheet .gm-badge {
+    background: #9c27b0;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-left: 5px;
+}
+
+.party-sheet .planning-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.party-sheet .planning-value .value-display {
+    font-size: 20px;
+    font-weight: bold;
+    min-width: 50px;
+    text-align: center;
+}
+
+.party-sheet .help-text {
+    font-size: 11px;
+    color: #666;
+    font-style: italic;
+    text-align: center;
+}
+
+.party-sheet .danger-factors {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.party-sheet .factor-group h3 {
+    margin: 0 0 6px 0;
+    font-size: 14px;
+    color: #782e22;
+    border-bottom: 1px solid #782e22;
+    padding-bottom: 3px;
+}
+
+.party-sheet .factor-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.party-sheet .danger-factor {
+    width: 16px;
+    height: 16px;
+}
+
+.party-sheet .modifier {
+    margin-left: auto;
+    padding: 2px 6px;
+    background: rgba(120, 46, 34, 0.1);
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.party-sheet .reference-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.party-sheet .reference-table h3 {
+    margin: 8px 0 4px 0;
+    font-size: 14px;
+    color: #782e22;
+    border-bottom: 1px solid #782e22;
+    padding-bottom: 3px;
+}
+
+.party-sheet .reference-table h3:first-child {
+    margin-top: 0;
+}
+
+.party-sheet .reference-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.party-sheet .reference-row .ref-label {
+    color: #555;
+}
+
+.party-sheet .reference-row .ref-value {
+    font-weight: bold;
+    color: #782e22;
+}
+
+.party-sheet .reference-row .ref-value.calculated {
+    color: #1976d2;
+    font-size: 14px;
+}
+
+/* =========================
+   Resources Tab Styles
+   ========================= */
+
+.party-sheet .preparedness-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.party-sheet .preparedness-info p {
+    margin: 0;
+    font-size: 13px;
+    color: #555;
+    line-height: 1.4;
+}
+
+.party-sheet .consumables-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.party-sheet .consumable-item {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #782e22;
+    border-radius: 5px;
+    padding: 8px;
+}
+
+.party-sheet .consumable-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.party-sheet .consumable-header label {
+    font-weight: bold;
+    color: #782e22;
+    font-size: 13px;
+}
+
+.party-sheet .consumable-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.party-sheet .consumable-count {
+    font-size: 16px;
+    font-weight: bold;
+    min-width: 30px;
+    text-align: center;
+}
+
+.party-sheet .consumable-item small {
+    font-size: 11px;
+    color: #666;
+    display: block;
+}
+
+.party-sheet .planning-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.party-sheet .planning-checkbox input {
+    width: 16px;
+    height: 16px;
+}
+
+.party-sheet .planning-checkbox span {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.party-sheet .resource-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.party-sheet .note-item {
+    background: rgba(255, 243, 224, 0.9);
+    border-left: 3px solid #ff9800;
+    padding: 6px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #555;
+}
+
+.party-sheet .note-item strong {
+    color: #782e22;
+}
+
+/* =========================
+   Cost Summary Styles
+   ========================= */
+
+.party-sheet .cost-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.party-sheet .cost-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.party-sheet .cost-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.party-sheet .cost-label {
+    color: #555;
+    font-weight: bold;
+}
+
+.party-sheet .cost-value {
+    color: #782e22;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.party-sheet .cost-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    background: rgba(120, 46, 34, 0.1);
+    border: 2px solid #782e22;
+    border-radius: 5px;
+    margin-top: 6px;
+}
+
+.party-sheet .cost-total .cost-label {
+    font-size: 14px;
+    color: #782e22;
+}
+
+.party-sheet .cost-total .cost-value {
+    font-size: 16px;
+    color: #782e22;
+}
+
+.party-sheet .currency-note {
+    font-size: 10px;
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    display: block;
+    margin-top: 4px;
+}
+
+.party-sheet .value-display.negative {
+    color: #d32f2f;
+}
+
+/* =========================
+   Provisions-Special Column
+   ========================= */
+
+.party-sheet .provisions-special-column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
