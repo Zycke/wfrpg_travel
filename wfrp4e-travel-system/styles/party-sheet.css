@@ -266,6 +266,12 @@
     color: #666;
 }
 
+.party-sheet .character-item .character-wounds {
+    font-size: 11px;
+    color: #666;
+    margin-right: 8px;
+}
+
 .party-sheet .character-item .remove-character {
     color: #782e22;
     cursor: pointer;

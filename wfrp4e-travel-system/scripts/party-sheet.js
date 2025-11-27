@@ -286,12 +286,16 @@ export class PartySheet extends ActorSheet {
             .map(actor => {
                 const tb = actor.system.characteristics.t.bonus || 0;
                 const exposureDamage = Math.max(0, exposure - tb);
+                const currentWounds = actor.system.status.wounds.value || 0;
+                const maxWounds = actor.system.status.wounds.max || 0;
                 
                 return {
                     id: actor.id,
                     name: actor.name,
                     img: actor.img,
                     tb: tb,
+                    currentWounds: currentWounds,
+                    maxWounds: maxWounds,
                     exposureWarning: exposureDamage > 0,
                     exposureDamage: exposureDamage
                 };
@@ -1540,7 +1544,7 @@ export class PartySheet extends ActorSheet {
         
         // Calculate provisions needed (2x if Sweltering/Bitter)
         const isExtremeTempProvisions = (weather.temperature === 'sweltering' || weather.temperature === 'bitter');
-        const provisionsNeeded = partySize * (isExtremeTempProvisions ? 2 : 1);
+        const provisionsNeeded = isExtremeTempProvisions ? 2 : 1; // 1 provision feeds whole party
         
         // Check for blizzard
         const extremeWeather = this._checkExtremeWeather();
@@ -1614,7 +1618,17 @@ export class PartySheet extends ActorSheet {
             summary.push(`Hunger satisfied (reset to 0)`);
         }
         
-        // Step 3: Blizzard JP cost
+        // Step 3: Gain exposure based on weather conditions
+        const exposureCalc = this._calculateExposure();
+        const exposureGain = isTraveling ? exposureCalc.travelingExposure : exposureCalc.campingExposure;
+        let newExposure = exposure;
+        if (exposureGain > 0) {
+            newExposure = exposure + exposureGain;
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.exposure', newExposure);
+            summary.push(`Gained +${exposureGain} exposure (${isTraveling ? 'traveling' : 'camping'})`);
+        }
+        
+        // Step 4: Blizzard JP cost
         let blizzardWeariness = 0;
         if (isBlizzard && isTraveling) {
             if (jp > 0) {
@@ -1626,22 +1640,22 @@ export class PartySheet extends ActorSheet {
             }
         }
         
-        // Step 4: Daily weariness from hunger + exposure + blizzard
-        let totalWearinessGain = newHunger + exposure + blizzardWeariness;
+        // Step 5: Daily weariness from hunger + exposure + blizzard
+        let totalWearinessGain = newHunger + newExposure + blizzardWeariness;
         if (totalWearinessGain > 0) {
             let parts = [];
             if (newHunger > 0) parts.push(`Hunger: ${newHunger}`);
-            if (exposure > 0) parts.push(`Exposure: ${exposure}`);
+            if (newExposure > 0) parts.push(`Exposure: ${newExposure}`);
             if (blizzardWeariness > 0) parts.push(`Blizzard: ${blizzardWeariness}`);
             summary.push(`Daily strain: +${totalWearinessGain} weariness (${parts.join(', ')})`);
         }
         
-        // Step 5: Apply weariness and handle overflow
+        // Step 6: Apply weariness and handle overflow to Travel Fatigue
         const currentWeariness = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
         const wearinessThreshold = this._calculateWearinessThreshold(linkedCharacters) + (this.actor.getFlag('wfrp4e-travel-system', 'travel.hasMounts') ? 2 : 0);
-        const totalWeariness = currentWeariness + totalWearinessGain;
+        let totalWeariness = currentWeariness + totalWearinessGain;
         
-        if (totalWeariness >= wearinessThreshold && wearinessThreshold > 0) {
+        if (wearinessThreshold > 0 && totalWeariness >= wearinessThreshold) {
             const travelFatigue = this.actor.getFlag('wfrp4e-travel-system', 'resources.travelFatigue') || 0;
             const fatigueGain = Math.floor(totalWeariness / wearinessThreshold);
             const newWeariness = totalWeariness % wearinessThreshold;
@@ -1654,7 +1668,31 @@ export class PartySheet extends ActorSheet {
             await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', totalWeariness);
         }
         
-        // Step 6: Increase Days on Road
+        // Step 7: Apply exposure damage to characters (if exposure > TB)
+        const woundedCharacters = [];
+        for (const charData of linkedCharacters) {
+            const char = game.actors.get(charData);
+            if (!char) continue;
+            
+            const tb = char.system.characteristics.t.bonus;
+            const exposureWarning = newExposure - tb;
+            
+            if (exposureWarning > 0) {
+                const currentWounds = char.system.status.wounds.value;
+                const maxWounds = char.system.status.wounds.max;
+                const woundDamage = exposureWarning;
+                const newWounds = Math.max(0, currentWounds - woundDamage);
+                
+                await char.update({'system.status.wounds.value': newWounds});
+                woundedCharacters.push(`${char.name}: -${woundDamage} wounds (${newWounds}/${maxWounds})`);
+            }
+        }
+        
+        if (woundedCharacters.length > 0) {
+            summary.push(`⚠ <strong>Exposure damage:</strong><br>${woundedCharacters.join('<br>')}`);
+        }
+        
+        // Step 8: Increase Days on Road
         const currentDays = this.actor.getFlag('wfrp4e-travel-system', 'journey.daysOnRoad') || 0;
         await this.actor.setFlag('wfrp4e-travel-system', 'journey.daysOnRoad', currentDays + 1);
         
