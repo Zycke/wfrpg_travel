@@ -435,6 +435,12 @@ export class PartySheet extends ActorSheet {
         const action = button.dataset.action;
         const resourcePath = button.dataset.resource;
         
+        // Special handling for Days on Road increase
+        if (resourcePath === 'journey.daysOnRoad' && action === 'increase') {
+            await this._onDaysOnRoadIncrease();
+            return;
+        }
+        
         // Special handling for meticulous planning (boolean)
         if (resourcePath === 'resources.consumables.meticulousPlanning') {
             const currentValue = this.actor.getFlag('wfrp4e-travel-system', resourcePath) || false;
@@ -1517,6 +1523,145 @@ export class PartySheet extends ActorSheet {
         const isChecked = checkbox.checked;
         
         await this.actor.setFlag('wfrp4e-travel-system', `weather.gear.${gearType}`, isChecked);
+        this.render(false);
+    }
+    
+    /**
+     * Handle Days on Road increase with all associated effects
+     */
+    async _onDaysOnRoadIncrease() {
+        const weather = this.actor.getFlag('wfrp4e-travel-system', 'weather.current') || {};
+        const status = this.actor.getFlag('wfrp4e-travel-system', 'travel.status');
+        const provisions = this.actor.getFlag('wfrp4e-travel-system', 'resources.provisions') || 0;
+        const hunger = this.actor.getFlag('wfrp4e-travel-system', 'resources.hunger') || 0;
+        const exposure = this.actor.getFlag('wfrp4e-travel-system', 'resources.exposure') || 0;
+        const linkedCharacters = this.actor.getFlag('wfrp4e-travel-system', 'linkedCharacters') || [];
+        const partySize = linkedCharacters.length;
+        
+        // Calculate provisions needed (2x if Sweltering/Bitter)
+        const isExtremeTempProvisions = (weather.temperature === 'sweltering' || weather.temperature === 'bitter');
+        const provisionsNeeded = partySize * (isExtremeTempProvisions ? 2 : 1);
+        
+        // Check for blizzard
+        const extremeWeather = this._checkExtremeWeather();
+        const isBlizzard = extremeWeather.type === 'blizzard';
+        const isTraveling = status === 'traveling';
+        
+        // Build confirmation message
+        let confirmMsg = `<h3>Advance 1 Day</h3><ul>`;
+        
+        // Provisions
+        if (provisions >= provisionsNeeded) {
+            confirmMsg += `<li>Consume ${provisionsNeeded} provisions${isExtremeTempProvisions ? ` (2x due to ${this._capitalizeWeather(weather.temperature)} temperature)` : ''}</li>`;
+        } else {
+            confirmMsg += `<li><strong style="color: #d32f2f;">⚠ Provisions exhausted!</strong> Hunger will increase by +1</li>`;
+        }
+        
+        // Hunger recovery
+        if (hunger > 0 && provisions >= provisionsNeeded) {
+            confirmMsg += `<li>Hunger satisfied (reset to 0)</li>`;
+        }
+        
+        // Blizzard JP cost
+        const jp = this.actor.getFlag('wfrp4e-travel-system', 'resources.journeyPool.current') || 0;
+        if (isBlizzard && isTraveling) {
+            if (jp > 0) {
+                confirmMsg += `<li>Blizzard: Spend 1 Journey Pool</li>`;
+            } else {
+                confirmMsg += `<li><strong style="color: #ff9800;">⚠ JP exhausted!</strong> Gain +1 weariness from blizzard travel</li>`;
+            }
+        }
+        
+        // Daily weariness
+        const dailyWeariness = hunger + exposure;
+        if (dailyWeariness > 0) {
+            confirmMsg += `<li>Daily strain: +${dailyWeariness} weariness (Hunger: ${hunger}, Exposure: ${exposure})</li>`;
+        }
+        
+        confirmMsg += `</ul><p>Continue?</p>`;
+        
+        // Show confirmation dialog
+        const confirmed = await Dialog.confirm({
+            title: "Advance Days on Road",
+            content: confirmMsg,
+            defaultYes: true
+        });
+        
+        if (!confirmed) return;
+        
+        // Execute all steps
+        const summary = [];
+        
+        // Step 1: Consume provisions
+        let newProvisions = provisions;
+        let newHunger = hunger;
+        if (provisions >= provisionsNeeded) {
+            newProvisions = provisions - provisionsNeeded;
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.provisions', newProvisions);
+            summary.push(`Consumed ${provisionsNeeded} provisions${isExtremeTempProvisions ? ` (2x rate)` : ''}`);
+        } else {
+            newProvisions = 0;
+            newHunger = hunger + 1;
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.provisions', 0);
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.hunger', newHunger);
+            summary.push(`⚠ Provisions exhausted! Hunger increased to ${newHunger}`);
+        }
+        
+        // Step 2: Check hunger recovery
+        if (hunger > 0 && newProvisions > 0) {
+            newHunger = 0;
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.hunger', 0);
+            summary.push(`Hunger satisfied (reset to 0)`);
+        }
+        
+        // Step 3: Blizzard JP cost
+        let blizzardWeariness = 0;
+        if (isBlizzard && isTraveling) {
+            if (jp > 0) {
+                await this.actor.setFlag('wfrp4e-travel-system', 'resources.journeyPool.current', jp - 1);
+                summary.push(`Blizzard: Spent 1 JP`);
+            } else {
+                blizzardWeariness = 1;
+                summary.push(`⚠ JP exhausted! Gained +1 weariness`);
+            }
+        }
+        
+        // Step 4: Daily weariness from hunger + exposure + blizzard
+        let totalWearinessGain = newHunger + exposure + blizzardWeariness;
+        if (totalWearinessGain > 0) {
+            let parts = [];
+            if (newHunger > 0) parts.push(`Hunger: ${newHunger}`);
+            if (exposure > 0) parts.push(`Exposure: ${exposure}`);
+            if (blizzardWeariness > 0) parts.push(`Blizzard: ${blizzardWeariness}`);
+            summary.push(`Daily strain: +${totalWearinessGain} weariness (${parts.join(', ')})`);
+        }
+        
+        // Step 5: Apply weariness and handle overflow
+        const currentWeariness = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
+        const wearinessThreshold = this._calculateWearinessThreshold(linkedCharacters) + (this.actor.getFlag('wfrp4e-travel-system', 'travel.hasMounts') ? 2 : 0);
+        const totalWeariness = currentWeariness + totalWearinessGain;
+        
+        if (totalWeariness >= wearinessThreshold && wearinessThreshold > 0) {
+            const travelFatigue = this.actor.getFlag('wfrp4e-travel-system', 'resources.travelFatigue') || 0;
+            const fatigueGain = Math.floor(totalWeariness / wearinessThreshold);
+            const newWeariness = totalWeariness % wearinessThreshold;
+            const newTravelFatigue = travelFatigue + fatigueGain;
+            
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', newWeariness);
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.travelFatigue', newTravelFatigue);
+            summary.push(`⚠ Weariness overflow! Gained +${fatigueGain} Travel Fatigue (${newWeariness} weariness remaining)`);
+        } else {
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', totalWeariness);
+        }
+        
+        // Step 6: Increase Days on Road
+        const currentDays = this.actor.getFlag('wfrp4e-travel-system', 'journey.daysOnRoad') || 0;
+        await this.actor.setFlag('wfrp4e-travel-system', 'journey.daysOnRoad', currentDays + 1);
+        
+        // Show consolidated notification
+        ui.notifications.info(`<strong>Day ${currentDays + 1}</strong><br>` + summary.join('<br>'));
+        
+        // Re-render sheet
         this.render(false);
     }
 }
