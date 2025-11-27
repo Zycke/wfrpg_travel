@@ -1169,8 +1169,8 @@ export class PartySheet extends ActorSheet {
         
         // Refund PP
         if (ppRefund > 0) {
-            const currentPP = this.actor.getFlag('wfrp4e-travel-system', 'resources.preparednessPool.current') || 0;
-            await this.actor.setFlag('wfrp4e-travel-system', 'resources.preparednessPool.current', currentPP + ppRefund);
+            const currentPP = this.actor.getFlag('wfrp4e-travel-system', 'resources.preparednessPool') || 0;
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.preparednessPool', currentPP + ppRefund);
         }
         
         // Update cost display
