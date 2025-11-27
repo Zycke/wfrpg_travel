@@ -311,6 +311,46 @@ export class PartySheet extends ActorSheet {
         return Math.floor(totalTB / characters.length);
     }
     
+    /**
+     * Add weariness and automatically handle overflow to Travel Fatigue
+     * @param {number} amount - Amount of weariness to add
+     * @returns {Object} - Object with wearinessGained and fatigueGained
+     */
+    async _addWeariness(amount) {
+        if (amount <= 0) return { wearinessGained: 0, fatigueGained: 0 };
+        
+        const linkedCharacters = this.actor.getFlag('wfrp4e-travel-system', 'linkedCharacters') || [];
+        const characterData = this._getLinkedCharacters(linkedCharacters);
+        const currentWeariness = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
+        const currentTravelFatigue = this.actor.getFlag('wfrp4e-travel-system', 'resources.travelFatigue') || 0;
+        const hasMounts = this.actor.getFlag('wfrp4e-travel-system', 'travel.hasMounts') || false;
+        
+        // Calculate threshold
+        const baseThreshold = this._calculateWearinessThreshold(characterData);
+        const wearinessThreshold = baseThreshold + (hasMounts ? 2 : 0);
+        
+        if (wearinessThreshold <= 0) {
+            // No threshold, just add weariness
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', currentWeariness + amount);
+            return { wearinessGained: amount, fatigueGained: 0 };
+        }
+        
+        // Calculate overflow
+        const totalWeariness = currentWeariness + amount;
+        const fatigueGained = Math.floor(totalWeariness / wearinessThreshold);
+        const newWeariness = totalWeariness % wearinessThreshold;
+        const newTravelFatigue = currentTravelFatigue + fatigueGained;
+        
+        // Update values
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', newWeariness);
+        
+        if (fatigueGained > 0) {
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.travelFatigue', newTravelFatigue);
+        }
+        
+        return { wearinessGained: amount, fatigueGained: fatigueGained, newWeariness: newWeariness };
+    }
+    
     /** @override */
     activateListeners(html) {
         super.activateListeners(html);
@@ -926,8 +966,10 @@ export class PartySheet extends ActorSheet {
         if (choice === "jp") {
             await this.actor.setFlag('wfrp4e-travel-system', 'resources.journeyPool.current', currentJP - 1);
         } else {
-            const currentWeariness = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
-            await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', currentWeariness + 1);
+            const result = await this._addWeariness(1);
+            if (result.fatigueGained > 0) {
+                ui.notifications.warn(`Weariness overflow! Gained +${result.fatigueGained} Travel Fatigue.`);
+            }
         }
         
         return true;
@@ -1140,8 +1182,17 @@ export class PartySheet extends ActorSheet {
     
     // Helper methods for resource adjustments
     async _adjustWeariness(amount) {
-        const current = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
-        await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', Math.max(0, current + amount));
+        if (amount > 0) {
+            // Use the overflow-handling method for increases
+            const result = await this._addWeariness(amount);
+            if (result.fatigueGained > 0) {
+                ui.notifications.warn(`Weariness overflow! Gained +${result.fatigueGained} Travel Fatigue.`);
+            }
+        } else if (amount < 0) {
+            // For decreases, just reduce weariness (can't go below 0)
+            const current = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', Math.max(0, current + amount));
+        }
     }
     
     async _adjustTravelFatigue(amount) {
@@ -1651,21 +1702,11 @@ export class PartySheet extends ActorSheet {
         }
         
         // Step 6: Apply weariness and handle overflow to Travel Fatigue
-        const currentWeariness = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
-        const wearinessThreshold = this._calculateWearinessThreshold(linkedCharacters) + (this.actor.getFlag('wfrp4e-travel-system', 'travel.hasMounts') ? 2 : 0);
-        let totalWeariness = currentWeariness + totalWearinessGain;
-        
-        if (wearinessThreshold > 0 && totalWeariness >= wearinessThreshold) {
-            const travelFatigue = this.actor.getFlag('wfrp4e-travel-system', 'resources.travelFatigue') || 0;
-            const fatigueGain = Math.floor(totalWeariness / wearinessThreshold);
-            const newWeariness = totalWeariness % wearinessThreshold;
-            const newTravelFatigue = travelFatigue + fatigueGain;
-            
-            await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', newWeariness);
-            await this.actor.setFlag('wfrp4e-travel-system', 'resources.travelFatigue', newTravelFatigue);
-            summary.push(`⚠ Weariness overflow! Gained +${fatigueGain} Travel Fatigue (${newWeariness} weariness remaining)`);
-        } else {
-            await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', totalWeariness);
+        if (totalWearinessGain > 0) {
+            const result = await this._addWeariness(totalWearinessGain);
+            if (result.fatigueGained > 0) {
+                summary.push(`⚠ Weariness overflow! Gained +${result.fatigueGained} Travel Fatigue (${result.newWeariness} weariness remaining)`);
+            }
         }
         
         // Step 7: Apply exposure damage to characters (if exposure > TB)
