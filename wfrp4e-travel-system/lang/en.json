@@ -39,6 +39,27 @@
     },
     
     "Weather": {
+      "Conditions": "Conditions",
+      "Climate": "Climate",
+      "Season": "Season",
+      "GenerateWeather": "Generate Weather",
+      "CurrentWeather": "Weather",
+      "ExposureAndGear": "Exposure & Gear",
+      "WeatherAppropriateGear": "Weather Appropriate Gear",
+      "CampSetup": "Camp Setup",
+      "ExposureTraveling": "Exposure (Traveling)",
+      "ExposureCamping": "Exposure (Camping)",
+      "Climates": {
+        "hot": "Hot",
+        "temperate": "Temperate",
+        "cold": "Cold"
+      },
+      "Seasons": {
+        "spring": "Spring",
+        "summer": "Summer",
+        "autumn": "Autumn",
+        "winter": "Winter"
+      },
       "Temperature": {
         "sweltering": "Sweltering",
         "hot": "Hot",
@@ -50,19 +71,27 @@
         "none": "None",
         "light": "Light",
         "heavy": "Heavy",
-        "veryHeavy": "Very Heavy"
+        "very-heavy": "Very Heavy"
       },
       "Visibility": {
         "clear": "Clear",
-        "mist": "Mist",
-        "fog": "Fog",
-        "thickFog": "Thick Fog"
+        "moderate": "Moderate",
+        "poor": "Poor"
       },
       "Wind": {
         "still": "Still",
-        "light": "Light",
-        "medium": "Medium",
-        "strong": "Strong"
+        "gentle": "Gentle",
+        "moderate": "Moderate",
+        "strong": "Strong",
+        "very-strong": "Very Strong"
+      },
+      "Effects": {
+        "Title": "Weather Effects",
+        "TemperatureEffects": "Temperature Effects",
+        "PrecipitationEffects": "Precipitation Effects",
+        "VisibilityEffects": "Visibility Effects",
+        "WindEffects": "Wind Effects",
+        "ExtremeWeather": "Extreme Weather"
       }
     },
     

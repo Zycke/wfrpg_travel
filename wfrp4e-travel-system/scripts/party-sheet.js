@@ -134,6 +134,38 @@ export class PartySheet extends ActorSheet {
         context.showWatchNone = context.watchCount === 0;
         context.showInsufficientWatch = context.watchCount <= 1; // Show warning for 0 or 1 watcher
         
+        // Process weather data for template
+        if (!context.weather.conditions) {
+            context.weather.conditions = { climate: 'temperate', season: 'summer' };
+        }
+        if (!context.weather.current) {
+            context.weather.current = { temperature: 'comfortable', precipitation: 'none', visibility: 'clear', wind: 'still' };
+        }
+        if (!context.weather.gear) {
+            context.weather.gear = { weatherAppropriateGear: false, campSetup: false };
+        }
+        
+        // Calculate weather modifiers
+        const seasonMod = { spring: 2, summer: 0, autumn: 2, winter: 4 }[context.weather.conditions.season || 'summer'];
+        const climateMod = { hot: -2, temperate: 0, cold: 2 }[context.weather.conditions.climate || 'temperate'];
+        context.weather.modifiers = {
+            temperature: `+${seasonMod + climateMod}`,
+            precipitation: `+${seasonMod}`
+        };
+        
+        // Check for extreme weather
+        const extremeWeather = this._checkExtremeWeather();
+        context.weather.isBlizzard = extremeWeather.type === 'blizzard';
+        context.weather.isExtremeCold = extremeWeather.type === 'extreme-cold';
+        
+        // Calculate exposure
+        const exposure = this._calculateExposure();
+        context.weather.exposure = {
+            traveling: exposure.travelingExposure,
+            camping: exposure.campingExposure,
+            explanation: exposure.explanation
+        };
+        
         // Add system and user info
         context.isGM = game.user.isGM;
         context.editable = this.isEditable;
@@ -209,10 +241,20 @@ export class PartySheet extends ActorSheet {
                 halfRations: false
             },
             weather: {
-                temperature: 'comfortable',
-                precipitation: 'none',
-                visibility: 'clear',
-                wind: 'still'
+                conditions: {
+                    climate: 'temperate',
+                    season: 'summer'
+                },
+                current: {
+                    temperature: 'comfortable',
+                    precipitation: 'none',
+                    visibility: 'clear',
+                    wind: 'still'
+                },
+                gear: {
+                    weatherAppropriateGear: false,
+                    campSetup: false
+                }
             },
             camp: {
                 tasks: {}
@@ -302,6 +344,18 @@ export class PartySheet extends ActorSheet {
         
         // Task action select
         html.find('.task-action-select').change(this._onTaskActionChange.bind(this));
+        
+        // Weather generation button
+        html.find('.generate-weather-btn').click(this._generateWeather.bind(this));
+        
+        // Weather condition dropdowns
+        html.find('.weather-condition-select').change(this._onWeatherConditionChange.bind(this));
+        
+        // Weather manual override dropdowns
+        html.find('.weather-override-select').change(this._onWeatherOverride.bind(this));
+        
+        // Weather gear checkboxes
+        html.find('.weather-gear-checkbox').change(this._onWeatherGearChange.bind(this));
     }
     
     /**
@@ -1194,5 +1248,266 @@ export class PartySheet extends ActorSheet {
         } else {
             ui.notifications.info("All consumables reset to 0");
         }
+    }
+    
+    /**
+     * Weather Generation Methods
+     */
+    
+    /**
+     * Generate weather based on climate and season
+     */
+    async _generateWeather(event) {
+        event.preventDefault();
+        
+        const climate = this.actor.getFlag('wfrp4e-travel-system', 'weather.conditions.climate') || 'temperate';
+        const season = this.actor.getFlag('wfrp4e-travel-system', 'weather.conditions.season') || 'summer';
+        
+        // Get modifiers
+        const seasonMod = { spring: 2, summer: 0, autumn: 2, winter: 4 }[season];
+        const climateMod = { hot: -2, temperate: 0, cold: 2 }[climate];
+        
+        // Roll 1: Temperature (with both modifiers)
+        const tempRoll = Math.floor(Math.random() * 10) + 1;
+        const tempResult = tempRoll + seasonMod + climateMod;
+        const temperature = this._lookupTemperature(tempResult);
+        
+        // Roll 2: Precipitation (season modifier only)
+        const precipRoll = Math.floor(Math.random() * 10) + 1;
+        const precipResult = precipRoll + seasonMod;
+        const precipitation = this._lookupPrecipitation(precipResult);
+        
+        // Roll 3: Visibility (no modifiers initially)
+        const visRoll = Math.floor(Math.random() * 10) + 1;
+        let visibility = this._lookupVisibility(visRoll);
+        let visibilityOverridden = false;
+        
+        // Roll 4: Wind (no modifiers)
+        const windRoll = Math.floor(Math.random() * 10) + 1;
+        const wind = this._lookupWind(windRoll);
+        
+        // Apply precipitation override to visibility
+        if (precipitation === 'heavy') {
+            visibility = 'moderate';
+            visibilityOverridden = true;
+        } else if (precipitation === 'very-heavy') {
+            visibility = 'poor';
+            visibilityOverridden = true;
+        }
+        
+        // Check for extreme weather conditions
+        const isBlizzard = (temperature === 'bitter' && precipitation === 'very-heavy');
+        const coldTemp = (temperature === 'chilly' || temperature === 'bitter');
+        const heavyPrecip = (precipitation === 'heavy' || precipitation === 'very-heavy');
+        const strongWind = (wind === 'strong' || wind === 'very-strong');
+        const isExtremeCold = (coldTemp && heavyPrecip && strongWind);
+        
+        // Apply blizzard override to visibility (overrides everything)
+        if (isBlizzard) {
+            visibility = 'poor';
+            visibilityOverridden = true;
+        }
+        
+        // Save weather
+        await this.actor.setFlag('wfrp4e-travel-system', 'weather.current', {
+            temperature,
+            precipitation,
+            visibility,
+            wind
+        });
+        
+        // Build notification message
+        let message = `<strong>Weather Generated:</strong><br>`;
+        message += `Temperature: 1d10(${tempRoll}) + ${seasonMod + climateMod} = ${tempResult} → ${this._capitalizeWeather(temperature)}<br>`;
+        message += `Precipitation: 1d10(${precipRoll}) + ${seasonMod} = ${precipResult} → ${this._capitalizeWeather(precipitation)}<br>`;
+        message += `Visibility: 1d10(${visRoll}) = ${visRoll} → ${this._capitalizeWeather(visibility)}`;
+        if (visibilityOverridden) {
+            message += ` <em>(overridden)</em>`;
+        }
+        message += `<br>Wind: 1d10(${windRoll}) = ${windRoll} → ${this._capitalizeWeather(wind)}<br>`;
+        
+        // Add extreme weather warnings
+        if (isBlizzard) {
+            message += `<br><strong style="color: #d32f2f;">⚠ BLIZZARD CONDITIONS!</strong>`;
+        } else if (isExtremeCold) {
+            message += `<br><strong style="color: #ff9800;">⚠ EXTREME COLD CONDITIONS!</strong>`;
+        }
+        
+        ui.notifications.info(message);
+        
+        // Re-render to update display
+        this.render(false);
+    }
+    
+    /**
+     * Weather table lookup functions
+     */
+    _lookupTemperature(result) {
+        const table = {
+            1: 'sweltering',
+            2: 'hot',
+            3: 'hot',
+            4: 'comfortable',
+            5: 'comfortable',
+            6: 'comfortable',
+            7: 'comfortable',
+            8: 'comfortable',
+            9: 'chilly',
+            10: 'chilly',
+            11: 'bitter',
+            12: 'bitter'
+        };
+        return result >= 13 ? 'bitter' : (table[result] || 'comfortable');
+    }
+    
+    _lookupPrecipitation(result) {
+        const table = {
+            1: 'none',
+            2: 'none',
+            3: 'none',
+            4: 'none',
+            5: 'light',
+            6: 'light',
+            7: 'light',
+            8: 'heavy',
+            9: 'heavy',
+            10: 'very-heavy',
+            11: 'very-heavy',
+            12: 'heavy'
+        };
+        return result >= 13 ? 'none' : (table[result] || 'none');
+    }
+    
+    _lookupVisibility(result) {
+        const table = {
+            1: 'clear',
+            2: 'clear',
+            3: 'clear',
+            4: 'clear',
+            5: 'clear',
+            6: 'moderate',
+            7: 'moderate',
+            8: 'moderate',
+            9: 'poor',
+            10: 'poor',
+            11: 'moderate',
+            12: 'moderate'
+        };
+        return result >= 13 ? 'clear' : (table[result] || 'clear');
+    }
+    
+    _lookupWind(result) {
+        const table = {
+            1: 'still',
+            2: 'gentle',
+            3: 'moderate',
+            4: 'moderate',
+            5: 'moderate',
+            6: 'strong',
+            7: 'strong',
+            8: 'strong',
+            9: 'very-strong',
+            10: 'very-strong',
+            11: 'moderate',
+            12: 'gentle'
+        };
+        return result >= 13 ? 'still' : (table[result] || 'moderate');
+    }
+    
+    /**
+     * Check for extreme weather conditions
+     */
+    _checkExtremeWeather() {
+        const weather = this.actor.getFlag('wfrp4e-travel-system', 'weather.current') || {};
+        
+        const isBlizzard = (
+            weather.temperature === 'bitter' && 
+            weather.precipitation === 'very-heavy'
+        );
+        
+        const isExtremeCold = (
+            (weather.temperature === 'chilly' || weather.temperature === 'bitter') &&
+            (weather.precipitation === 'heavy' || weather.precipitation === 'very-heavy') &&
+            (weather.wind === 'strong' || weather.wind === 'very-strong')
+        );
+        
+        // Blizzard takes precedence
+        if (isBlizzard) {
+            return { type: 'blizzard', isExtreme: true };
+        } else if (isExtremeCold) {
+            return { type: 'extreme-cold', isExtreme: true };
+        }
+        
+        return { type: 'normal', isExtreme: false };
+    }
+    
+    /**
+     * Calculate exposure gain per day based on weather and gear
+     */
+    _calculateExposure() {
+        const weather = this.actor.getFlag('wfrp4e-travel-system', 'weather.current') || {};
+        const gear = this.actor.getFlag('wfrp4e-travel-system', 'weather.gear') || {};
+        
+        const extremeWeather = this._checkExtremeWeather();
+        
+        let travelingExposure = 0;
+        let campingExposure = 0;
+        let explanation = '';
+        
+        if (extremeWeather.type === 'blizzard') {
+            travelingExposure = gear.weatherAppropriateGear ? 1 : 3;
+            campingExposure = gear.campSetup ? 0 : travelingExposure;
+            explanation = `Blizzard conditions: ${gear.weatherAppropriateGear ? '1' : '3'} exposure/day when traveling${gear.weatherAppropriateGear ? ' (with gear)' : ' (without gear)'}. ${gear.campSetup ? 'No exposure gain/loss' : 'Same as traveling'} when camping${gear.campSetup ? ' (camp setup)' : ' (no camp setup)'}.`;
+        } else if (extremeWeather.type === 'extreme-cold') {
+            travelingExposure = gear.weatherAppropriateGear ? 1 : 3;
+            campingExposure = gear.campSetup ? 0 : travelingExposure;
+            explanation = `Extreme cold conditions: ${gear.weatherAppropriateGear ? '1' : '3'} exposure/day when traveling${gear.weatherAppropriateGear ? ' (with gear)' : ' (without gear)'}. ${gear.campSetup ? 'No exposure gain/loss' : 'Same as traveling'} when camping${gear.campSetup ? ' (camp setup)' : ' (no camp setup)'}.`;
+        } else {
+            explanation = 'Normal weather conditions: No exposure gain.';
+        }
+        
+        return { travelingExposure, campingExposure, explanation };
+    }
+    
+    /**
+     * Capitalize weather condition for display
+     */
+    _capitalizeWeather(str) {
+        return str.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    }
+    
+    /**
+     * Handle weather condition dropdown changes (climate/season)
+     */
+    async _onWeatherConditionChange(event) {
+        const select = event.currentTarget;
+        const condition = select.dataset.condition; // 'climate' or 'season'
+        const value = select.value;
+        
+        await this.actor.setFlag('wfrp4e-travel-system', `weather.conditions.${condition}`, value);
+    }
+    
+    /**
+     * Handle manual weather override
+     */
+    async _onWeatherOverride(event) {
+        const select = event.currentTarget;
+        const weatherType = select.dataset.weatherType; // 'temperature', 'precipitation', etc.
+        const value = select.value;
+        
+        await this.actor.setFlag('wfrp4e-travel-system', `weather.current.${weatherType}`, value);
+        this.render(false);
+    }
+    
+    /**
+     * Handle weather gear checkbox changes
+     */
+    async _onWeatherGearChange(event) {
+        const checkbox = event.currentTarget;
+        const gearType = checkbox.dataset.gear; // 'weatherAppropriateGear' or 'campSetup'
+        const isChecked = checkbox.checked;
+        
+        await this.actor.setFlag('wfrp4e-travel-system', `weather.gear.${gearType}`, isChecked);
+        this.render(false);
     }
 }

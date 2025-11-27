@@ -1324,8 +1324,215 @@
 
         {{!-- Weather & Events Tab --}}
         <div class="tab weather" data-group="primary" data-tab="weather">
-            <h2>Weather & Events</h2>
-            <p class="tab-placeholder">Weather & Events content - will be implemented in Phase 6</p>
+            
+            <div class="weather-top-row">
+                {{!-- Left Panel: Current Weather Display --}}
+                <div class="weather-panel weather-display">
+                    <h3>{{localize "TRAVEL.Weather.CurrentWeather"}}</h3>
+                    
+                    <div class="weather-current">
+                        <div class="weather-item">
+                            <label>{{localize "TRAVEL.Overview.Temperature"}}</label>
+                            <select class="weather-override-select" data-weather-type="temperature" {{#unless editable}}disabled{{/unless}}>
+                                <option value="sweltering" {{#if (eq weather.current.temperature "sweltering")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.sweltering"}}</option>
+                                <option value="hot" {{#if (eq weather.current.temperature "hot")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.hot"}}</option>
+                                <option value="comfortable" {{#if (eq weather.current.temperature "comfortable")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.comfortable"}}</option>
+                                <option value="chilly" {{#if (eq weather.current.temperature "chilly")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.chilly"}}</option>
+                                <option value="bitter" {{#if (eq weather.current.temperature "bitter")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.bitter"}}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="weather-item">
+                            <label>{{localize "TRAVEL.Overview.Precipitation"}}</label>
+                            <select class="weather-override-select" data-weather-type="precipitation" {{#unless editable}}disabled{{/unless}}>
+                                <option value="none" {{#if (eq weather.current.precipitation "none")}}selected{{/if}}>{{localize "TRAVEL.Weather.Precipitation.none"}}</option>
+                                <option value="light" {{#if (eq weather.current.precipitation "light")}}selected{{/if}}>{{localize "TRAVEL.Weather.Precipitation.light"}}</option>
+                                <option value="heavy" {{#if (eq weather.current.precipitation "heavy")}}selected{{/if}}>{{localize "TRAVEL.Weather.Precipitation.heavy"}}</option>
+                                <option value="very-heavy" {{#if (eq weather.current.precipitation "very-heavy")}}selected{{/if}}>{{localize "TRAVEL.Weather.Precipitation.very-heavy"}}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="weather-item">
+                            <label>Visibility</label>
+                            <select class="weather-override-select" data-weather-type="visibility" {{#unless editable}}disabled{{/unless}}>
+                                <option value="clear" {{#if (eq weather.current.visibility "clear")}}selected{{/if}}>{{localize "TRAVEL.Weather.Visibility.clear"}}</option>
+                                <option value="moderate" {{#if (eq weather.current.visibility "moderate")}}selected{{/if}}>{{localize "TRAVEL.Weather.Visibility.moderate"}}</option>
+                                <option value="poor" {{#if (eq weather.current.visibility "poor")}}selected{{/if}}>{{localize "TRAVEL.Weather.Visibility.poor"}}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="weather-item">
+                            <label>Wind</label>
+                            <select class="weather-override-select" data-weather-type="wind" {{#unless editable}}disabled{{/unless}}>
+                                <option value="still" {{#if (eq weather.current.wind "still")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.still"}}</option>
+                                <option value="gentle" {{#if (eq weather.current.wind "gentle")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.gentle"}}</option>
+                                <option value="moderate" {{#if (eq weather.current.wind "moderate")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.moderate"}}</option>
+                                <option value="strong" {{#if (eq weather.current.wind "strong")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.strong"}}</option>
+                                <option value="very-strong" {{#if (eq weather.current.wind "very-strong")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.very-strong"}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    {{!-- Weather Effects Display --}}
+                    <div class="weather-effects">
+                        <h4>{{localize "TRAVEL.Weather.Effects.Title"}}</h4>
+                        
+                        {{!-- Temperature Effects --}}
+                        <div class="effect-section">
+                            <strong>{{localize "TRAVEL.Weather.Effects.TemperatureEffects"}}</strong>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'sweltering')}}effect-inactive{{/unless}}">
+                                <strong>Sweltering:</strong> 2x provisions use, +2 weariness when JP reaches 0 and on event trigger
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'hot')}}effect-inactive{{/unless}}">
+                                <strong>Hot:</strong> +1 weariness when JP reaches 0 and on event trigger
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'comfortable')}}effect-inactive{{/unless}}">
+                                <strong>Comfortable:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'chilly')}}effect-inactive{{/unless}}">
+                                <strong>Chilly:</strong> +1 weariness when JP reaches 0 and on event trigger
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'bitter')}}effect-inactive{{/unless}}">
+                                <strong>Bitter:</strong> 2x provisions use, +2 weariness when JP reaches 0 and on event trigger
+                            </div>
+                        </div>
+                        
+                        {{!-- Precipitation Effects --}}
+                        <div class="effect-section">
+                            <strong>{{localize "TRAVEL.Weather.Effects.PrecipitationEffects"}} (only with Chilly/Bitter temperature)</strong>
+                            <div class="effect-item {{#unless (eq weather.current.precipitation 'light')}}effect-inactive{{/unless}}">
+                                <strong>Light:</strong> +1 weariness
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.precipitation 'heavy')}}effect-inactive{{/unless}}">
+                                <strong>Heavy:</strong> +2 weariness
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.precipitation 'very-heavy')}}effect-inactive{{/unless}}">
+                                <strong>Very Heavy:</strong> +3 weariness
+                            </div>
+                        </div>
+                        
+                        {{!-- Visibility Effects --}}
+                        <div class="effect-section">
+                            <strong>{{localize "TRAVEL.Weather.Effects.VisibilityEffects"}}</strong>
+                            <div class="effect-item {{#unless (eq weather.current.visibility 'clear')}}effect-inactive{{/unless}}">
+                                <strong>Clear:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.visibility 'moderate')}}effect-inactive{{/unless}}">
+                                <strong>Moderate:</strong> -1 SL to all travel actions, Hunt/Fish, Scout Area, navigation, and perception checks
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.visibility 'poor')}}effect-inactive{{/unless}}">
+                                <strong>Poor:</strong> -2 SL to all travel actions, Hunt/Fish, Scout Area, navigation, and perception checks. -1 SL to ranged weapon skill checks
+                            </div>
+                        </div>
+                        
+                        {{!-- Wind Effects --}}
+                        <div class="effect-section">
+                            <strong>{{localize "TRAVEL.Weather.Effects.WindEffects"}}</strong>
+                            <div class="effect-item">
+                                Wind only affects extreme weather determination
+                            </div>
+                        </div>
+                        
+                        {{!-- Extreme Weather Warnings --}}
+                        {{#if weather.isBlizzard}}
+                        <div class="extreme-weather-warning blizzard-warning">
+                            <strong>⚠ BLIZZARD CONDITIONS</strong>
+                            <ul>
+                                <li>Movement speed reduced by 50%</li>
+                                <li>Must spend 1 JP per day to move (or gain +1 weariness if JP = 0)</li>
+                                <li>Visibility automatically set to Poor</li>
+                                <li>With gear: +1 exposure/day traveling</li>
+                                <li>Without gear: +3 exposure/day traveling</li>
+                                <li>Camping: No exposure gain/loss if camp setup, otherwise same as traveling</li>
+                            </ul>
+                        </div>
+                        {{else}}
+                        {{#if weather.isExtremeCold}}
+                        <div class="extreme-weather-warning extreme-cold-warning">
+                            <strong>⚠ EXTREME COLD CONDITIONS</strong>
+                            <ul>
+                                <li>With gear: +1 exposure/day traveling</li>
+                                <li>Without gear: +3 exposure/day traveling</li>
+                                <li>Camping: No exposure gain/loss if camp setup, otherwise same as traveling</li>
+                            </ul>
+                        </div>
+                        {{/if}}
+                        {{/if}}
+                    </div>
+                </div>
+                
+                {{!-- Right Panel: Generation Conditions --}}
+                <div class="weather-panel weather-conditions">
+                    <h3>{{localize "TRAVEL.Weather.Conditions"}}</h3>
+                    
+                    <div class="condition-controls">
+                        <div class="condition-item">
+                            <label>{{localize "TRAVEL.Weather.Climate"}}</label>
+                            <select class="weather-condition-select" data-condition="climate" {{#unless editable}}disabled{{/unless}}>
+                                <option value="hot" {{#if (eq weather.conditions.climate "hot")}}selected{{/if}}>{{localize "TRAVEL.Weather.Climates.hot"}} (-2)</option>
+                                <option value="temperate" {{#if (eq weather.conditions.climate "temperate")}}selected{{/if}}>{{localize "TRAVEL.Weather.Climates.temperate"}} (+0)</option>
+                                <option value="cold" {{#if (eq weather.conditions.climate "cold")}}selected{{/if}}>{{localize "TRAVEL.Weather.Climates.cold"}} (+2)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="condition-item">
+                            <label>{{localize "TRAVEL.Weather.Season"}}</label>
+                            <select class="weather-condition-select" data-condition="season" {{#unless editable}}disabled{{/unless}}>
+                                <option value="spring" {{#if (eq weather.conditions.season "spring")}}selected{{/if}}>{{localize "TRAVEL.Weather.Seasons.spring"}} (+2)</option>
+                                <option value="summer" {{#if (eq weather.conditions.season "summer")}}selected{{/if}}>{{localize "TRAVEL.Weather.Seasons.summer"}} (+0)</option>
+                                <option value="autumn" {{#if (eq weather.conditions.season "autumn")}}selected{{/if}}>{{localize "TRAVEL.Weather.Seasons.autumn"}} (+2)</option>
+                                <option value="winter" {{#if (eq weather.conditions.season "winter")}}selected{{/if}}>{{localize "TRAVEL.Weather.Seasons.winter"}} (+4)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="modifier-display">
+                            <strong>Current Modifiers:</strong>
+                            <div>Temperature: {{weather.modifiers.temperature}}</div>
+                            <div>Precipitation: {{weather.modifiers.precipitation}}</div>
+                        </div>
+                        
+                        {{#if editable}}
+                        <button type="button" class="generate-weather-btn">
+                            <i class="fas fa-dice"></i> {{localize "TRAVEL.Weather.GenerateWeather"}}
+                        </button>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+            
+            {{!-- Bottom Section: Exposure & Gear --}}
+            <div class="weather-bottom-section">
+                <div class="weather-panel exposure-gear-panel">
+                    <h3>{{localize "TRAVEL.Weather.ExposureAndGear"}}</h3>
+                    
+                    <div class="gear-checkboxes">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="weather-gear-checkbox" data-gear="weatherAppropriateGear" {{#if weather.gear.weatherAppropriateGear}}checked{{/if}} {{#unless editable}}disabled{{/unless}}>
+                            {{localize "TRAVEL.Weather.WeatherAppropriateGear"}}
+                        </label>
+                        
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="weather-gear-checkbox" data-gear="campSetup" {{#if weather.gear.campSetup}}checked{{/if}} {{#unless editable}}disabled{{/unless}}>
+                            {{localize "TRAVEL.Weather.CampSetup"}}
+                        </label>
+                    </div>
+                    
+                    <div class="exposure-display">
+                        <div class="exposure-line">
+                            <strong>{{localize "TRAVEL.Weather.ExposureTraveling"}}:</strong> {{weather.exposure.traveling}}/day
+                        </div>
+                        <div class="exposure-line">
+                            <strong>{{localize "TRAVEL.Weather.ExposureCamping"}}:</strong> {{weather.exposure.camping}}/day
+                        </div>
+                        {{#if weather.exposure.explanation}}
+                        <div class="exposure-explanation">
+                            {{weather.exposure.explanation}}
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </section>
