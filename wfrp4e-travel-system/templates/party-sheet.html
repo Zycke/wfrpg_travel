@@ -121,7 +121,14 @@
                                     <i class="fas fa-minus"></i>
                                 </button>
                                 {{/if}}
-                                <span class="value-display">{{resources.exposure}}</span>
+                                <span class="value-display">
+                                    {{resources.exposure}}
+                                    {{#if (gt weather.exposure.daily 0)}}
+                                    <span class="weather-warning">(+{{weather.exposure.daily}}/day)</span>
+                                    {{else}}
+                                    <span class="exposure-none">(+0/day)</span>
+                                    {{/if}}
+                                </span>
                                 {{#if editable}}
                                 <button type="button" class="resource-control" data-action="increase" data-resource="resources.exposure">
                                     <i class="fas fa-plus"></i>
@@ -148,6 +155,9 @@
                                 {{/if}}
                                 <span class="value-display">
                                     {{resources.journeyPool.current}} / {{resources.journeyPool.max}}
+                                    {{#if weather.blizzardTraveling}}
+                                    <span class="weather-warning">⚠ (Blizzard: -1 JP/day)</span>
+                                    {{/if}}
                                 </span>
                                 {{#if editable}}
                                 <button type="button" class="resource-control" data-action="increase" data-resource="resources.journeyPool.current">
@@ -168,6 +178,9 @@
                                 {{/if}}
                                 <span class="value-display">
                                     {{resources.provisions}} {{localize "TRAVEL.Overview.Days"}}
+                                    {{#if weather.extremeTempProvisions}}
+                                    <span class="weather-warning">⚠ (2x usage)</span>
+                                    {{/if}}
                                 </span>
                                 {{#if editable}}
                                 <button type="button" class="resource-control" data-action="increase" data-resource="resources.provisions">
@@ -254,12 +267,25 @@
                                 {{localize (concat "TRAVEL.Weather.Wind." weather.wind)}}
                             </span>
                         </div>
-                        {{#if (or (eq weather.temperature "sweltering") (eq weather.temperature "bitter"))}}
-                        <div class="weather-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span>Double provisions usage</span>
+                        
+                        {{!-- Active Weather Effects --}}
+                        {{#if weather.activeEffects}}
+                        <div class="active-effects">
+                            <strong>Active Effects:</strong>
+                            <ul class="effects-list">
+                                {{#each weather.activeEffects}}
+                                <li>{{this}}</li>
+                                {{/each}}
+                            </ul>
                         </div>
                         {{/if}}
+                        
+                        {{!-- Link to Weather Tab --}}
+                        <div class="weather-tab-link">
+                            <a class="tab-link" data-tab="weather">
+                                <i class="fas fa-arrow-right"></i> Weather & Terrain
+                            </a>
+                        </div>
                     </div>
                 </div>
 

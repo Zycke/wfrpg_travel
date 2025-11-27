@@ -1,7 +1,7 @@
 {
   "id": "wfrp4e-travel-system",
   "title": "WFRP4e Travel System",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "compatibility": {
     "minimum": "12",
     "verified": "13",

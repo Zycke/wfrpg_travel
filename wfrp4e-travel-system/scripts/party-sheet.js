@@ -167,8 +167,60 @@ export class PartySheet extends ActorSheet {
         context.weather.exposure = {
             traveling: exposure.travelingExposure,
             camping: exposure.campingExposure,
-            explanation: exposure.explanation
+            explanation: exposure.explanation,
+            daily: partyFlags.travel?.status === 'traveling' ? exposure.travelingExposure : exposure.campingExposure
         };
+        
+        // Add warnings for Overview tab
+        context.weather.extremeTempProvisions = (context.weather.current.temperature === 'sweltering' || context.weather.current.temperature === 'bitter');
+        context.weather.blizzardTraveling = (context.weather.isBlizzard && partyFlags.travel?.status === 'traveling');
+        
+        // Build list of active weather effects for Overview display
+        const activeEffects = [];
+        
+        // Temperature effects
+        if (context.weather.current.temperature === 'sweltering' || context.weather.current.temperature === 'bitter') {
+            activeEffects.push('2x provisions usage');
+            activeEffects.push('+2 weariness (when JP=0 or on events)');
+        } else if (context.weather.current.temperature === 'hot' || context.weather.current.temperature === 'chilly') {
+            activeEffects.push('+1 weariness (when JP=0 or on events)');
+        }
+        
+        // Precipitation effects (only with cold temperatures)
+        if ((context.weather.current.temperature === 'chilly' || context.weather.current.temperature === 'bitter') &&
+            context.weather.current.precipitation !== 'none') {
+            if (context.weather.current.precipitation === 'light') {
+                activeEffects.push('+1 weariness from cold precipitation');
+            } else if (context.weather.current.precipitation === 'heavy') {
+                activeEffects.push('+2 weariness from cold precipitation');
+            } else if (context.weather.current.precipitation === 'very-heavy') {
+                activeEffects.push('+3 weariness from cold precipitation');
+            }
+        }
+        
+        // Visibility effects
+        if (context.weather.current.visibility === 'moderate') {
+            activeEffects.push('-1 SL (travel actions, hunting, scouting, navigation, perception)');
+        } else if (context.weather.current.visibility === 'poor') {
+            activeEffects.push('-2 SL (travel actions, hunting, scouting, navigation, perception)');
+            activeEffects.push('-1 SL (ranged weapons)');
+        }
+        
+        // Wind effects
+        if (context.weather.current.wind === 'strong') {
+            activeEffects.push('-1 SL to ranged attacks');
+        } else if (context.weather.current.wind === 'very-strong') {
+            activeEffects.push('-2 SL to ranged attacks');
+        }
+        
+        // Blizzard effects
+        if (context.weather.isBlizzard) {
+            activeEffects.push('⚠ BLIZZARD: Movement -50%, Must spend 1 JP/day (or +1 weariness)');
+        } else if (context.weather.isExtremeCold) {
+            activeEffects.push('⚠ EXTREME COLD: Exposure gain');
+        }
+        
+        context.weather.activeEffects = activeEffects.length > 0 ? activeEffects : null;
         
         // Add system and user info
         context.isGM = game.user.isGM;
