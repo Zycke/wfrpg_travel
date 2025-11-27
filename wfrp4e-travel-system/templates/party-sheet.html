@@ -303,12 +303,14 @@
                             <img src="{{this.img}}" alt="{{this.name}}" title="{{this.name}}"/>
                             <div class="character-info">
                                 <span class="character-name">{{this.name}}</span>
-                                <span class="character-tb">TB: {{this.tb}}</span>
-                                {{#if this.exposureWarning}}
-                                <span class="exposure-warning-text">
-                                    <i class="fas fa-exclamation-triangle"></i> Taking {{this.exposureDamage}} wound{{#if (gt this.exposureDamage 1)}}s{{/if}}/day
-                                </span>
-                                {{/if}}
+                                <div class="character-stats">
+                                    <span class="character-tb">TB: {{this.tb}}</span>
+                                    {{#if this.exposureWarning}}
+                                    <span class="exposure-warning-text">
+                                        <i class="fas fa-exclamation-triangle"></i> {{this.exposureDamage}} wound{{#if (gt this.exposureDamage 1)}}s{{/if}}/day
+                                    </span>
+                                    {{/if}}
+                                </div>
                             </div>
                             {{#if ../editable}}
                             <a class="remove-character" data-character-id="{{this.id}}" title="Remove from party">
@@ -794,14 +796,328 @@
 
         {{!-- Travel Actions Tab --}}
         <div class="tab travel-actions" data-group="primary" data-tab="travel-actions">
-            <h2>Travel Actions</h2>
-            <p class="tab-placeholder">Travel actions content - will be implemented in Phase 5</p>
+            
+            <div class="actions-header">
+                <h2>Travel Actions</h2>
+                <p class="help-text">Each action costs 1 JP or increases weariness by 1. No character may take more than one travel action per hex.</p>
+            </div>
+
+            <div class="actions-grid">
+                {{!-- Pathfinding --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-compass"></i> Pathfinding</h3>
+                        <span class="action-cost">1 JP or +1 Weariness</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Navigation (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> -1 weariness (early arrival)<br>
+                            <strong>Critical:</strong> Can take camp actions today<br>
+                            <strong>Failure:</strong> +1 weariness<br>
+                            <strong>Critical Fail:</strong> Lost! No progress, +2 weariness
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="pathfinding">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="pathfinding">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Forage --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-leaf"></i> Forage</h3>
+                        <span class="action-cost">1 JP or +1 Weariness</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Outdoor Survival or Lore (Herbs) (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +1 provisions (+1 per 3 SL)<br>
+                            <strong>Critical:</strong> +1 additional provision<br>
+                            <strong>Failure:</strong> Nothing found<br>
+                            <strong>Critical Fail:</strong> Poisoned! 1d10 damage
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="forage">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="forage">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Scout Ahead --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-binoculars"></i> Scout Ahead</h3>
+                        <span class="action-cost">1 JP or +1 Weariness</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Perception (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> GM reveals hexes until event & next hex<br>
+                            <strong>Critical:</strong> GM reveals event, may spend 1 JP to re-roll<br>
+                            <strong>Failure:</strong> Nothing found
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="scout">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="scout">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Contingency Planning --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-clipboard-list"></i> Contingency Planning</h3>
+                        <span class="action-cost">1 JP or +1 Weariness</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Leadership (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +1 to next event roll<br>
+                            <strong>Critical:</strong> +2 to next event roll<br>
+                            <strong>Failure:</strong> No effect
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="contingency">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="contingency">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         {{!-- Camp Actions Tab --}}
         <div class="tab camp-actions" data-group="primary" data-tab="camp-actions">
-            <h2>Camp Actions</h2>
-            <p class="tab-placeholder">Camp actions content - will be implemented in Phase 5</p>
+            
+            <div class="actions-header">
+                <h2>Camp Actions</h2>
+                <p class="help-text">Camping automatically adds 2 JP per day. Camp actions are free (no JP or weariness cost).</p>
+            </div>
+
+            <div class="actions-grid">
+                {{!-- Setup Camp --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-campground"></i> Setup Camp</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Outdoor Survival (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> Camp setup! -1 weariness/day, healing checks Challenging (+0)<br>
+                            <strong>Failure:</strong> Poor camp. Healing checks Hard (-10)
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="setup-camp">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="setup-camp">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Cook --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-utensils"></i> Cook</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Trade (Cook) (Easy +40) or Outdoor Survival (Average +20)</div>
+                        <div class="action-description">
+                            <strong>2+ SL:</strong> -1 weariness<br>
+                            <strong>Critical/6+ SL:</strong> Set weariness to 0 OR spend 1 provision for -1 travel fatigue<br>
+                            <strong>Failure:</strong> Varies by SL (see rules)
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="cook">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="cook">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Hunt or Fish --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-fish"></i> Hunt or Fish</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Outdoor Survival (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +1 provisions (+1 per 2 SL)<br>
+                            <strong>Critical:</strong> +2 additional provisions<br>
+                            <strong>Failure:</strong> Nothing found<br>
+                            <strong>Critical Fail:</strong> Injured! 1d10 damage
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="hunt">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="hunt">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Raise Spirits --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-music"></i> Raise Spirits</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Entertain (Any) or Play (Any) (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> -1 weariness<br>
+                            <strong>Critical:</strong> -Fellowship Bonus weariness<br>
+                            <strong>Failure:</strong> No effect
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="raise-spirits">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="raise-spirits">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Recuperate --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-bed"></i> Recuperate</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Endurance (Challenging +0 if camp setup, Hard -10 if not)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> Heal wounds = SL + TB<br>
+                            Allows body to recover from harsh conditions
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="recuperate">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="recuperate">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Revise Planning --}}
+                <div class="action-card">
+                    <div class="action-header">
+                        <h3><i class="fas fa-map-marked-alt"></i> Revise Planning</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Leadership (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +1 JP per SL, -1 max JP if not full<br>
+                            <strong>Critical:</strong> +1 bonus JP, +1 max JP if full<br>
+                            <strong>Failure:</strong> -1 max JP<br>
+                            <strong>Critical Fail:</strong> -2 max JP
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="revise-planning">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each ../linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="revise-planning">
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         {{!-- Weather & Events Tab --}}

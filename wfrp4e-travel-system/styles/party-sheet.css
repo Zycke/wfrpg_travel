@@ -873,16 +873,152 @@
     background: rgba(255, 87, 34, 0.1);
 }
 
+.party-sheet .character-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .party-sheet .exposure-warning-text {
-    display: block;
     color: #ff5722;
     font-size: 11px;
     font-weight: bold;
-    margin-top: 2px;
 }
 
 .party-sheet .exposure-warning-text i {
     margin-right: 3px;
+}
+
+/* =========================
+   Action Cards
+   ========================= */
+
+.party-sheet .actions-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.party-sheet .actions-header h2 {
+    margin: 0 0 8px 0;
+}
+
+.party-sheet .actions-header .help-text {
+    color: #666;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.party-sheet .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.party-sheet .action-card {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.party-sheet .action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #ddd;
+}
+
+.party-sheet .action-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.party-sheet .action-header h3 i {
+    margin-right: 6px;
+    color: #5e35b1;
+}
+
+.party-sheet .action-cost {
+    background: #5e35b1;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.party-sheet .action-body {
+    font-size: 12px;
+}
+
+.party-sheet .action-skill {
+    background: #e3f2fd;
+    padding: 6px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+.party-sheet .action-description {
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.party-sheet .action-description strong {
+    color: #5e35b1;
+}
+
+.party-sheet .character-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+
+.party-sheet .character-selector label {
+    font-weight: bold;
+    font-size: 11px;
+    color: #666;
+}
+
+.party-sheet .action-character-select {
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.party-sheet .action-button {
+    padding: 8px 12px;
+    background: #5e35b1;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+
+.party-sheet .action-button:hover {
+    background: #4527a0;
+}
+
+.party-sheet .action-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.party-sheet .action-button i {
+    margin-right: 4px;
 }
 
 /* =========================

@@ -219,6 +219,9 @@ export class PartySheet extends ActorSheet {
         
         // GM roll for hexes until event
         html.find('[data-action="roll-hexes"]').click(this._onRollHexesUntilEvent.bind(this));
+        
+        // Action buttons
+        html.find('.action-button').click(this._onActionRoll.bind(this));
     }
     
     /**
@@ -543,6 +546,7 @@ export class PartySheet extends ActorSheet {
     /**
      * Handle GM roll for hexes until event
      * Formula: 1d10, halved (round up), modified by danger rating
+     * DR 2-4: -1, DR 5+: -2
      */
     async _onRollHexesUntilEvent(event) {
         event.preventDefault();
@@ -555,8 +559,16 @@ export class PartySheet extends ActorSheet {
         // Halve and round up
         const halved = Math.ceil(roll.total / 2);
         
-        // Modify by danger rating
-        const result = Math.max(1, halved + dangerRating);
+        // Calculate danger rating modifier
+        let drModifier = 0;
+        if (dangerRating >= 5) {
+            drModifier = -2;
+        } else if (dangerRating >= 2) {
+            drModifier = -1;
+        }
+        
+        // Apply modifier (minimum 1)
+        const result = Math.max(1, halved + drModifier);
         
         // Show the roll to GM only
         await roll.toMessage({
@@ -564,7 +576,7 @@ export class PartySheet extends ActorSheet {
             flavor: `<strong>Hexes Until Event Roll</strong><br>
                      Base Roll: ${roll.total}<br>
                      Halved (rounded up): ${halved}<br>
-                     Danger Rating Modifier: ${dangerRating >= 0 ? '+' : ''}${dangerRating}<br>
+                     Danger Rating: ${dangerRating} (${drModifier >= 0 ? '+' : ''}${drModifier})<br>
                      <strong>Final Result: ${result} hexes</strong>`,
             whisper: [game.user.id]
         });
@@ -573,5 +585,364 @@ export class PartySheet extends ActorSheet {
         await this.actor.setFlag('wfrp4e-travel-system', 'journey.hexesUntilEvent', result);
         
         ui.notifications.info(`Hexes until event set to ${result} (GM only)`);
+    }
+    
+    /**
+     * Handle action roll buttons
+     */
+    async _onActionRoll(event) {
+        event.preventDefault();
+        const button = event.currentTarget;
+        const action = button.dataset.action;
+        const selector = button.closest('.character-selector');
+        const select = selector.querySelector('.action-character-select');
+        const characterId = select.value;
+        
+        if (!characterId) {
+            ui.notifications.warn("Please select a character first");
+            return;
+        }
+        
+        const actor = game.actors.get(characterId);
+        if (!actor) {
+            ui.notifications.error("Character not found");
+            return;
+        }
+        
+        // Action configuration
+        const actionConfig = {
+            'pathfinding': {
+                skill: 'Navigation',
+                difficulty: 'average',
+                isTravelAction: true
+            },
+            'forage': {
+                skill: 'Outdoor Survival',
+                difficulty: 'average',
+                isTravelAction: true
+            },
+            'scout': {
+                skill: 'Perception',
+                difficulty: 'average',
+                isTravelAction: true
+            },
+            'contingency': {
+                skill: 'Leadership',
+                difficulty: 'average',
+                isTravelAction: true
+            },
+            'setup-camp': {
+                skill: 'Outdoor Survival',
+                difficulty: 'average',
+                isTravelAction: false
+            },
+            'cook': {
+                skill: 'Trade (Cook)',
+                difficulty: 'easy',
+                fallbackSkill: 'Outdoor Survival',
+                fallbackDifficulty: 'average',
+                isTravelAction: false
+            },
+            'hunt': {
+                skill: 'Outdoor Survival',
+                difficulty: 'average',
+                isTravelAction: false
+            },
+            'raise-spirits': {
+                skill: 'Entertain',
+                difficulty: 'average',
+                isTravelAction: false
+            },
+            'recuperate': {
+                skill: 'Endurance',
+                difficulty: 'challenging',
+                isTravelAction: false
+            },
+            'revise-planning': {
+                skill: 'Leadership',
+                difficulty: 'average',
+                isTravelAction: false
+            }
+        };
+        
+        const config = actionConfig[action];
+        if (!config) {
+            ui.notifications.error("Unknown action");
+            return;
+        }
+        
+        // Check/deduct cost for travel actions
+        if (config.isTravelAction) {
+            const canPayJP = await this._checkTravelActionCost();
+            if (!canPayJP) {
+                return; // User cancelled
+            }
+        }
+        
+        // Setup the skill test
+        const setupData = await actor.setupSkill(config.skill, {
+            title: `${action.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} - ${actor.name}`,
+            absolute: {
+                difficulty: config.difficulty
+            }
+        });
+        
+        if (!setupData) {
+            // If skill not found and there's a fallback, try fallback
+            if (config.fallbackSkill) {
+                const fallbackSetup = await actor.setupSkill(config.fallbackSkill, {
+                    title: `${action.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} - ${actor.name}`,
+                    absolute: {
+                        difficulty: config.fallbackDifficulty
+                    }
+                });
+                
+                if (fallbackSetup) {
+                    await this._handleSkillTest(fallbackSetup, actor, action);
+                }
+            }
+            return;
+        }
+        
+        await this._handleSkillTest(setupData, actor, action);
+    }
+    
+    /**
+     * Check if party can pay travel action cost (1 JP or +1 weariness)
+     */
+    async _checkTravelActionCost() {
+        const currentJP = this.actor.getFlag('wfrp4e-travel-system', 'resources.journeyPool.current') || 0;
+        
+        let choice;
+        if (currentJP > 0) {
+            choice = await Dialog.confirm({
+                title: "Travel Action Cost",
+                content: `<p>This travel action costs:</p>
+                         <ul>
+                         <li><strong>1 Journey Point</strong> (currently have ${currentJP})</li>
+                         <li><strong>OR +1 Weariness</strong></li>
+                         </ul>
+                         <p>Pay with Journey Point?</p>`,
+                yes: () => "jp",
+                no: () => "weariness",
+                defaultYes: true
+            });
+        } else {
+            choice = await Dialog.confirm({
+                title: "Travel Action Cost",
+                content: `<p>Journey Pool is empty. This action will <strong>increase weariness by 1</strong>.</p>
+                         <p>Continue?</p>`,
+                defaultYes: true
+            });
+            
+            if (!choice) return false;
+            choice = "weariness";
+        }
+        
+        if (!choice) return false;
+        
+        if (choice === "jp") {
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.journeyPool.current', currentJP - 1);
+        } else {
+            const currentWeariness = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
+            await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', currentWeariness + 1);
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Handle the skill test and process results
+     */
+    async _handleSkillTest(setupData, actor, action) {
+        const test = await actor.basicTest(setupData);
+        
+        if (!test) return;
+        
+        const result = test.result;
+        const sl = result.SL;
+        const isCritical = result.critical;
+        const isFumble = result.fumble;
+        
+        // Process results based on action
+        await this._processActionResult(action, sl, isCritical, isFumble, actor);
+    }
+    
+    /**
+     * Process action results and update party resources
+     */
+    async _processActionResult(action, sl, isCritical, isFumble, actor) {
+        const success = sl >= 0;
+        
+        switch (action) {
+            case 'pathfinding':
+                if (isFumble) {
+                    await this._adjustWeariness(2);
+                    ui.notifications.error("Lost! No progress made, +2 weariness");
+                } else if (!success) {
+                    await this._adjustWeariness(1);
+                    ui.notifications.warn("Poor pathfinding, +1 weariness");
+                } else if (isCritical) {
+                    await this._adjustWeariness(-1);
+                    ui.notifications.info("Excellent navigation! -1 weariness and can take camp actions today");
+                } else {
+                    await this._adjustWeariness(-1);
+                    ui.notifications.info("Good pathfinding, -1 weariness");
+                }
+                break;
+                
+            case 'forage':
+                if (isFumble) {
+                    // Roll 1d10 damage - need to create a roll
+                    const damageRoll = await new Roll('1d10').evaluate({async: true});
+                    await damageRoll.toMessage({
+                        flavor: `${actor.name} poisoned while foraging!`,
+                        speaker: {alias: actor.name}
+                    });
+                    ui.notifications.error(`Poisoned! Take ${damageRoll.total} damage`);
+                } else if (success) {
+                    let provisions = 1;
+                    if (isCritical) provisions++;
+                    provisions += Math.floor(sl / 3);
+                    await this._adjustProvisions(provisions);
+                    ui.notifications.info(`Foraged ${provisions} provisions`);
+                }
+                break;
+                
+            case 'scout':
+                if (success) {
+                    const hexes = this.actor.getFlag('wfrp4e-travel-system', 'journey.hexesUntilEvent') || 0;
+                    if (isCritical) {
+                        ui.notifications.info(`Hexes until event: ${hexes}. GM should reveal event and offer 1 JP re-roll`);
+                    } else {
+                        ui.notifications.info(`Hexes until event: ${hexes}. GM should reveal next hex`);
+                    }
+                }
+                break;
+                
+            case 'contingency':
+                if (success) {
+                    const bonus = isCritical ? 2 : 1;
+                    ui.notifications.info(`+${bonus} to next event roll (GM tracking)`);
+                }
+                break;
+                
+            case 'setup-camp':
+                if (success) {
+                    ui.notifications.info("Camp setup successfully! -1 weariness/day, healing checks Challenging (+0)");
+                } else {
+                    ui.notifications.warn("Poor camp setup. Healing checks are Hard (-10)");
+                }
+                break;
+                
+            case 'cook':
+                if (isFumble) {
+                    await this._adjustTravelFatigue(1);
+                    ui.notifications.error("Critical cooking failure! +1 travel fatigue");
+                } else if (success) {
+                    if (sl >= 6 || isCritical) {
+                        const choice = await Dialog.confirm({
+                            title: "Excellent Cooking!",
+                            content: "<p>Choose one:</p><ul><li>Set weariness to 0</li><li>Spend 1 provision to remove 1 travel fatigue</li></ul>",
+                            yes: () => "weariness",
+                            no: () => "fatigue"
+                        });
+                        
+                        if (choice) {
+                            await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', 0);
+                            ui.notifications.info("Weariness set to 0!");
+                        } else {
+                            await this._adjustProvisions(-1);
+                            await this._adjustTravelFatigue(-1);
+                            ui.notifications.info("Spent 1 provision, -1 travel fatigue");
+                        }
+                    } else if (sl >= 2) {
+                        await this._adjustWeariness(-1);
+                        ui.notifications.info("Good meal! -1 weariness");
+                    }
+                }
+                break;
+                
+            case 'hunt':
+                if (isFumble) {
+                    const damageRoll = await new Roll('1d10').evaluate({async: true});
+                    await damageRoll.toMessage({
+                        flavor: `${actor.name} injured while hunting!`,
+                        speaker: {alias: actor.name}
+                    });
+                    ui.notifications.error(`Injured! Take ${damageRoll.total} damage`);
+                } else if (success) {
+                    let provisions = 1;
+                    if (isCritical) provisions += 2;
+                    provisions += Math.floor(sl / 2);
+                    await this._adjustProvisions(provisions);
+                    ui.notifications.info(`Hunted ${provisions} provisions`);
+                }
+                break;
+                
+            case 'raise-spirits':
+                if (success) {
+                    const fb = actor.system.characteristics.fel.bonus || 0;
+                    const reduction = isCritical ? fb : 1;
+                    await this._adjustWeariness(-reduction);
+                    ui.notifications.info(`Spirits raised! -${reduction} weariness`);
+                }
+                break;
+                
+            case 'recuperate':
+                if (success) {
+                    const tb = actor.system.characteristics.t.bonus || 0;
+                    const healing = sl + tb;
+                    ui.notifications.info(`Rest successful! Heal ${healing} wounds`);
+                }
+                break;
+                
+            case 'revise-planning':
+                const currentJP = this.actor.getFlag('wfrp4e-travel-system', 'resources.journeyPool.current') || 0;
+                const maxJP = this.actor.getFlag('wfrp4e-travel-system', 'resources.journeyPool.max') || 10;
+                
+                if (isFumble) {
+                    await this.actor.setFlag('wfrp4e-travel-system', 'resources.journeyPool.max', Math.max(1, maxJP - 2));
+                    ui.notifications.error("Planning disaster! -2 max JP");
+                } else if (!success) {
+                    await this.actor.setFlag('wfrp4e-travel-system', 'resources.journeyPool.max', Math.max(1, maxJP - 1));
+                    ui.notifications.warn("Poor planning. -1 max JP");
+                } else {
+                    const jpGained = sl;
+                    const newJP = Math.min(maxJP, currentJP + jpGained);
+                    await this.actor.setFlag('wfrp4e-travel-system', 'resources.journeyPool.current', newJP);
+                    
+                    if (newJP < maxJP) {
+                        await this.actor.setFlag('wfrp4e-travel-system', 'resources.journeyPool.max', Math.max(1, maxJP - 1));
+                        ui.notifications.info(`+${jpGained} JP but pool not full, -1 max JP`);
+                    } else {
+                        if (isCritical) {
+                            await this.actor.setFlag('wfrp4e-travel-system', 'resources.journeyPool.current', newJP + 1);
+                            await this.actor.setFlag('wfrp4e-travel-system', 'resources.journeyPool.max', maxJP + 1);
+                            ui.notifications.info(`Critical! +${jpGained + 1} JP and +1 max JP!`);
+                        } else {
+                            ui.notifications.info(`+${jpGained} JP`);
+                        }
+                    }
+                }
+                break;
+        }
+    }
+    
+    // Helper methods for resource adjustments
+    async _adjustWeariness(amount) {
+        const current = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.weariness', Math.max(0, current + amount));
+    }
+    
+    async _adjustTravelFatigue(amount) {
+        const current = this.actor.getFlag('wfrp4e-travel-system', 'resources.travelFatigue') || 0;
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.travelFatigue', Math.max(0, current + amount));
+    }
+    
+    async _adjustProvisions(amount) {
+        const current = this.actor.getFlag('wfrp4e-travel-system', 'resources.provisions') || 0;
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.provisions', Math.max(0, current + amount));
+        this._updateCostDisplay();
     }
 }
