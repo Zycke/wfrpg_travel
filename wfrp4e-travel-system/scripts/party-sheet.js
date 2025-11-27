@@ -82,24 +82,40 @@ export class PartySheet extends ActorSheet {
             context.camp.tasks = {};
         }
         
+        // Pre-process task data for each character so template doesn't need helpers
+        for (const char of context.linkedCharacters) {
+            const task = context.camp.tasks[char.id] || { keepingWatch: false, selectedAction: null };
+            char.taskData = {
+                keepingWatch: task.keepingWatch || false,
+                selectedAction: task.selectedAction || null
+            };
+        }
+        
         // Calculate watch statistics
         context.watchCount = 0;
         context.hasRecuperate1 = false;
         context.hasRecuperate2Plus = false;
         let recuperateCount = 0;
+        let watchingCharacters = [];
         
         for (const char of context.linkedCharacters) {
             const task = context.camp.tasks[char.id];
             if (task && task.keepingWatch) {
                 context.watchCount++;
+                watchingCharacters.push(char);
                 if (task.selectedAction === 'recuperate') {
                     recuperateCount++;
                 }
             }
         }
         
+        context.watchingCharacters = watchingCharacters;
         context.hasRecuperate1 = (context.watchCount === 1 && recuperateCount === 1);
         context.hasRecuperate2Plus = (context.watchCount >= 2 && recuperateCount >= 2);
+        context.showWatchSuccess = context.watchCount >= 3;
+        context.showWatchWarning = context.watchCount === 2;
+        context.showWatchDanger = context.watchCount === 1;
+        context.showWatchNone = context.watchCount === 0;
         
         // Add system and user info
         context.isGM = game.user.isGM;
