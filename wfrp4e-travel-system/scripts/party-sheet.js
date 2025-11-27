@@ -1136,16 +1136,17 @@ export class PartySheet extends ActorSheet {
         const partySize = linkedCharacters.length;
         
         // Calculate total cost to refund (in silver shillings equivalent)
-        const provisionsCost = provisions * partySize; // in silver
-        const mountProvisionsCost = Math.ceil(mountProvisions * 6 / 12); // convert brass to silver (12bp = 1ss)
+        // Only count positive values
+        const provisionsCost = Math.max(0, provisions) * partySize; // in silver
+        const mountProvisionsCost = Math.ceil(Math.max(0, mountProvisions) * 6 / 12); // convert brass to silver (12bp = 1ss)
         
         const consumablesCost = 
-            (consumables.campSupplies || 0) * 1 +
-            (consumables.preservatives || 0) * 5 +
-            (consumables.survivalTools || 0) * 4 +
-            (consumables.medicinalHerbs || 0) * 3; // in silver
+            Math.max(0, consumables.campSupplies || 0) * 1 +
+            Math.max(0, consumables.preservatives || 0) * 5 +
+            Math.max(0, consumables.survivalTools || 0) * 4 +
+            Math.max(0, consumables.medicinalHerbs || 0) * 3; // in silver
         
-        const specialItemsCost = (consumables.specializedEquipment || 0) * 10; // in silver
+        const specialItemsCost = Math.max(0, consumables.specializedEquipment || 0) * 10; // in silver
         
         const totalCostSilver = provisionsCost + mountProvisionsCost + consumablesCost + specialItemsCost;
         
@@ -1156,19 +1157,15 @@ export class PartySheet extends ActorSheet {
         await this.actor.setFlag('wfrp4e-travel-system', 'resources.provisions', 0);
         await this.actor.setFlag('wfrp4e-travel-system', 'resources.mountProvisions', 0);
         
-        // Reset all consumables
-        const resetConsumables = {
-            campSupplies: 0,
-            spirits: 0,
-            preservatives: 0,
-            survivalTools: 0,
-            medicinalHerbs: 0,
-            specializedEquipment: 0,
-            updatedMaps: 0,
-            meticulousPlanning: false
-        };
-        
-        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables', resetConsumables);
+        // Reset all consumables individually
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables.campSupplies', 0);
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables.spirits', 0);
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables.preservatives', 0);
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables.survivalTools', 0);
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables.medicinalHerbs', 0);
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables.specializedEquipment', 0);
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables.updatedMaps', 0);
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables.meticulousPlanning', false);
         
         // Refund PP
         if (ppRefund > 0) {
@@ -1178,6 +1175,9 @@ export class PartySheet extends ActorSheet {
         
         // Update cost display
         this._updateCostDisplay();
+        
+        // Re-render to update all displays
+        this.render(false);
         
         if (ppRefund > 0) {
             ui.notifications.info(`All consumables reset to 0. Refunded ${ppRefund} Preparedness Pool.`);
