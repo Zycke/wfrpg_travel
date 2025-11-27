@@ -8,18 +8,6 @@ import { PartySheet } from './party-sheet.js';
 Hooks.once('init', async function() {
     console.log('WFRP4e Travel System | Initializing Travel System Module');
     
-    // Register Handlebars helpers
-    Handlebars.registerHelper('lookup', function(obj, key, subkey) {
-        if (!obj || !key) return undefined;
-        const item = obj[key];
-        if (!item || !subkey) return item;
-        return item[subkey];
-    });
-    
-    Handlebars.registerHelper('gte', function(a, b) {
-        return a >= b;
-    });
-    
     // Register module settings
     game.settings.register('wfrp4e-travel-system', 'debugMode', {
         name: 'Debug Mode',
