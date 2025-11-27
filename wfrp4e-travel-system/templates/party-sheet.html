@@ -177,26 +177,6 @@
                             </div>
                         </div>
 
-                        {{!-- Mount Provisions --}}
-                        <div class="progress-item">
-                            <label>Mount Provisions</label>
-                            <div class="progress-value">
-                                {{#if editable}}
-                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.mountProvisions">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                {{/if}}
-                                <span class="value-display">
-                                    {{resources.mountProvisions}} {{localize "TRAVEL.Overview.Days"}}
-                                </span>
-                                {{#if editable}}
-                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.mountProvisions">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                                {{/if}}
-                            </div>
-                        </div>
-
                         {{!-- Days on the Road --}}
                         <div class="progress-item">
                             <label>Days on the Road</label>
@@ -211,6 +191,26 @@
                                 </span>
                                 {{#if editable}}
                                 <button type="button" class="resource-control" data-action="increase" data-resource="journey.daysOnRoad">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
+
+                        {{!-- Mount Provisions --}}
+                        <div class="progress-item">
+                            <label>Mount Provisions</label>
+                            <div class="progress-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.mountProvisions">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">
+                                    {{resources.mountProvisions}} {{localize "TRAVEL.Overview.Days"}}
+                                </span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.mountProvisions">
                                     <i class="fas fa-plus"></i>
                                 </button>
                                 {{/if}}
@@ -822,7 +822,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
@@ -853,7 +853,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
@@ -883,7 +883,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
@@ -913,7 +913,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
@@ -954,7 +954,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
@@ -984,7 +984,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
@@ -1015,7 +1015,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
@@ -1045,7 +1045,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
@@ -1074,7 +1074,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
@@ -1105,7 +1105,7 @@
                             <label>Select Character:</label>
                             <select class="action-character-select">
                                 <option value="">Choose character...</option>
-                                {{#each ../linkedCharacters}}
+                                {{#each linkedCharacters}}
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>

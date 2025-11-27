@@ -876,15 +876,19 @@
 .party-sheet .character-stats {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 10px;
-    flex-wrap: wrap;
+}
+
+.party-sheet .character-tb {
+    flex-shrink: 0;
 }
 
 .party-sheet .exposure-warning-text {
     color: #ff5722;
     font-size: 11px;
     font-weight: bold;
+    flex: 1;
+    text-align: center;
 }
 
 .party-sheet .exposure-warning-text i {

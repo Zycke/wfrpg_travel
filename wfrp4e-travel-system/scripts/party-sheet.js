@@ -545,7 +545,7 @@ export class PartySheet extends ActorSheet {
     
     /**
      * Handle GM roll for hexes until event
-     * Formula: 1d10, halved (round up), modified by danger rating
+     * Formula: 1d10, halve (round up), +1, then apply DR modifier
      * DR 2-4: -1, DR 5+: -2
      */
     async _onRollHexesUntilEvent(event) {
@@ -556,8 +556,9 @@ export class PartySheet extends ActorSheet {
         // Roll 1d10
         const roll = await new Roll('1d10').evaluate({async: true});
         
-        // Halve and round up
+        // Halve and round up, then add 1
         const halved = Math.ceil(roll.total / 2);
+        const baseResult = halved + 1;
         
         // Calculate danger rating modifier
         let drModifier = 0;
@@ -568,7 +569,7 @@ export class PartySheet extends ActorSheet {
         }
         
         // Apply modifier (minimum 1)
-        const result = Math.max(1, halved + drModifier);
+        const result = Math.max(1, baseResult + drModifier);
         
         // Show the roll to GM only
         await roll.toMessage({
@@ -576,6 +577,7 @@ export class PartySheet extends ActorSheet {
             flavor: `<strong>Hexes Until Event Roll</strong><br>
                      Base Roll: ${roll.total}<br>
                      Halved (rounded up): ${halved}<br>
+                     +1: ${baseResult}<br>
                      Danger Rating: ${dangerRating} (${drModifier >= 0 ? '+' : ''}${drModifier})<br>
                      <strong>Final Result: ${result} hexes</strong>`,
             whisper: [game.user.id]
