@@ -463,6 +463,30 @@ export class PartySheet extends ActorSheet {
     }
     
     /**
+     * Format currency with proper conversions
+     * @param {number} brass - Brass pennies
+     * @param {number} silver - Silver shillings
+     * @returns {string} Formatted currency string
+     */
+    _formatCurrency(brass, silver) {
+        // Ensure no negatives
+        brass = Math.max(0, brass);
+        silver = Math.max(0, silver);
+        
+        // Convert brass to silver (12 bp = 1 ss)
+        const silverFromBrass = Math.floor(brass / 12);
+        const remainingBrass = brass % 12;
+        const totalSilver = silver + silverFromBrass;
+        
+        // Convert silver to gold (20 ss = 1 gc)
+        const gold = Math.floor(totalSilver / 20);
+        const remainingSilver = totalSilver % 20;
+        
+        // Build display string - ALWAYS show all three denominations
+        return `${gold} gc ${remainingSilver} ss ${remainingBrass} bp`;
+    }
+    
+    /**
      * Update the cost display on the Resources tab
      */
     _updateCostDisplay() {
@@ -489,10 +513,6 @@ export class PartySheet extends ActorSheet {
         const totalSilver = provisionsCost + consumablesCost + specialItemsCost;
         const totalBrass = mountProvisionsCost;
         
-        // Convert to gold if needed
-        const goldCrowns = Math.floor(totalSilver / 20);
-        const remainingSilver = totalSilver % 20;
-        
         // Update display
         const sheet = this.element[0];
         if (sheet) {
@@ -502,18 +522,11 @@ export class PartySheet extends ActorSheet {
             const specialItemsElem = sheet.querySelector('[data-cost-type="specialItems"]');
             const totalElem = sheet.querySelector('[data-cost-type="total"]');
             
-            if (provisionsElem) provisionsElem.textContent = `${provisionsCost} ss`;
-            if (mountProvisionsElem) mountProvisionsElem.textContent = `${mountProvisionsCost} bp`;
-            if (consumablesElem) consumablesElem.textContent = `${consumablesCost} ss`;
-            if (specialItemsElem) specialItemsElem.textContent = `${specialItemsCost} ss`;
-            
-            if (totalElem) {
-                if (goldCrowns > 0) {
-                    totalElem.textContent = `${goldCrowns} gc ${remainingSilver} ss ${totalBrass} bp`;
-                } else {
-                    totalElem.textContent = `${remainingSilver} ss ${totalBrass} bp`;
-                }
-            }
+            if (provisionsElem) provisionsElem.textContent = this._formatCurrency(0, provisionsCost);
+            if (mountProvisionsElem) mountProvisionsElem.textContent = this._formatCurrency(mountProvisionsCost, 0);
+            if (consumablesElem) consumablesElem.textContent = this._formatCurrency(0, consumablesCost);
+            if (specialItemsElem) specialItemsElem.textContent = this._formatCurrency(0, specialItemsCost);
+            if (totalElem) totalElem.textContent = this._formatCurrency(totalBrass, totalSilver);
         }
     }
     
