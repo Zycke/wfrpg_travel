@@ -959,91 +959,13 @@
         <div class="tab camp-actions" data-group="primary" data-tab="camp-actions">
             
             <div class="actions-header">
-                <h2>Camping</h2>
+                <h2>Camp Actions</h2>
                 <p class="help-text">Camping automatically adds 2 JP per day. Camp actions are free (no JP or weariness cost).</p>
-                {{#unless (eq travel.status "camping")}}
-                <div class="status-warning">
-                    <i class="fas fa-exclamation-circle"></i> Status must be set to "Camping" to use these actions
-                </div>
-                {{/unless}}
-            </div>
-
-            {{!-- Tasks and Watch Panels --}}
-            <div class="camp-management-panels">
-                {{!-- Tasks Panel --}}
-                <div class="tasks-panel">
-                    <h3>Tasks</h3>
-                    <div class="tasks-list">
-                        {{#each linkedCharacters}}
-                        <div class="task-row" data-character-id="{{this.id}}">
-                            <span class="character-name">{{this.name}}</span>
-                            <button type="button" class="watch-toggle {{#if (lookup ../camp.tasks this.id 'keepingWatch')}}active{{/if}}" 
-                                    data-character-id="{{this.id}}"
-                                    title="Toggle Keeping Watch">
-                                <i class="fas fa-eye"></i> Watch
-                            </button>
-                            <select class="task-action-select" data-character-id="{{this.id}}">
-                                <option value="">Select action...</option>
-                                <option value="setup-camp" {{#if (eq (lookup ../camp.tasks this.id 'selectedAction') 'setup-camp')}}selected{{/if}}>Setup Camp</option>
-                                <option value="cook" {{#if (eq (lookup ../camp.tasks this.id 'selectedAction') 'cook')}}selected{{/if}}>Cook</option>
-                                <option value="hunt" {{#if (eq (lookup ../camp.tasks this.id 'selectedAction') 'hunt')}}selected{{/if}}>Hunt or Fish</option>
-                                <option value="raise-spirits" {{#if (eq (lookup ../camp.tasks this.id 'selectedAction') 'raise-spirits')}}selected{{/if}}>Raise Spirits</option>
-                                <option value="recuperate" {{#if (eq (lookup ../camp.tasks this.id 'selectedAction') 'recuperate')}}selected{{/if}}>Recuperate</option>
-                                <option value="revise-planning" {{#if (eq (lookup ../camp.tasks this.id 'selectedAction') 'revise-planning')}}selected{{/if}}>Revise Planning</option>
-                                <option value="trapping" {{#if (eq (lookup ../camp.tasks this.id 'selectedAction') 'trapping')}}selected{{/if}}>Trapping</option>
-                                <option value="self-improvement" {{#if (eq (lookup ../camp.tasks this.id 'selectedAction') 'self-improvement')}}selected{{/if}}>Self Improvement</option>
-                                <option value="scout-area" {{#if (eq (lookup ../camp.tasks this.id 'selectedAction') 'scout-area')}}selected{{/if}}>Scout the Area</option>
-                            </select>
-                        </div>
-                        {{/each}}
-                    </div>
-                </div>
-
-                {{!-- Watch Panel --}}
-                <div class="watch-panel">
-                    <h3>Watch</h3>
-                    <div class="watch-content">
-                        <div class="watch-list">
-                            {{#each linkedCharacters}}
-                                {{#if (lookup ../camp.tasks this.id 'keepingWatch')}}
-                                <div class="watch-member">
-                                    <i class="fas fa-eye"></i> {{this.name}}
-                                </div>
-                                {{/if}}
-                            {{/each}}
-                        </div>
-                        <div class="watch-requirements">
-                            {{#if (gte watchCount 3)}}
-                                <div class="watch-info success">
-                                    <i class="fas fa-check-circle"></i> <strong>An Average Endurance test is required</strong>
-                                </div>
-                            {{else if (eq watchCount 2)}}
-                                <div class="watch-info warning">
-                                    <i class="fas fa-exclamation-triangle"></i> <strong>A Challenging Endurance test is required</strong>
-                                    {{#if hasRecuperate2Plus}}
-                                    <div class="watch-note">2+ recuperating: No fatigue roll needed</div>
-                                    {{/if}}
-                                </div>
-                            {{else if (eq watchCount 1)}}
-                                <div class="watch-info danger">
-                                    <i class="fas fa-times-circle"></i> <strong>1 party member on watch: +1 fatigue</strong>
-                                    {{#if hasRecuperate1}}
-                                    <div class="watch-note">Recuperating: No fatigue but event roll +1</div>
-                                    {{/if}}
-                                </div>
-                            {{else}}
-                                <div class="watch-info">
-                                    <i class="fas fa-info-circle"></i> No one keeping watch
-                                </div>
-                            {{/if}}
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div class="actions-grid">
                 {{!-- Setup Camp --}}
-                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                <div class="action-card">
                     <div class="action-header">
                         <h3><i class="fas fa-campground"></i> Setup Camp</h3>
                         <span class="action-cost">Free</span>
@@ -1063,7 +985,7 @@
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
-                            <button type="button" class="action-button" data-action="setup-camp" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                            <button type="button" class="action-button" data-action="setup-camp">
                                 <i class="fas fa-dice-d20"></i> Roll
                             </button>
                         </div>
@@ -1072,7 +994,7 @@
                 </div>
 
                 {{!-- Cook --}}
-                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                <div class="action-card">
                     <div class="action-header">
                         <h3><i class="fas fa-utensils"></i> Cook</h3>
                         <span class="action-cost">Free</span>
@@ -1093,7 +1015,7 @@
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
-                            <button type="button" class="action-button" data-action="cook" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                            <button type="button" class="action-button" data-action="cook">
                                 <i class="fas fa-dice-d20"></i> Roll
                             </button>
                         </div>
@@ -1102,7 +1024,7 @@
                 </div>
 
                 {{!-- Hunt or Fish --}}
-                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                <div class="action-card">
                     <div class="action-header">
                         <h3><i class="fas fa-fish"></i> Hunt or Fish</h3>
                         <span class="action-cost">Free</span>
@@ -1124,7 +1046,7 @@
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
-                            <button type="button" class="action-button" data-action="hunt" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                            <button type="button" class="action-button" data-action="hunt">
                                 <i class="fas fa-dice-d20"></i> Roll
                             </button>
                         </div>
@@ -1133,7 +1055,7 @@
                 </div>
 
                 {{!-- Raise Spirits --}}
-                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                <div class="action-card">
                     <div class="action-header">
                         <h3><i class="fas fa-music"></i> Raise Spirits</h3>
                         <span class="action-cost">Free</span>
@@ -1154,7 +1076,7 @@
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
-                            <button type="button" class="action-button" data-action="raise-spirits" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                            <button type="button" class="action-button" data-action="raise-spirits">
                                 <i class="fas fa-dice-d20"></i> Roll
                             </button>
                         </div>
@@ -1163,7 +1085,7 @@
                 </div>
 
                 {{!-- Recuperate --}}
-                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                <div class="action-card">
                     <div class="action-header">
                         <h3><i class="fas fa-bed"></i> Recuperate</h3>
                         <span class="action-cost">Free</span>
@@ -1183,7 +1105,7 @@
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
-                            <button type="button" class="action-button" data-action="recuperate" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                            <button type="button" class="action-button" data-action="recuperate">
                                 <i class="fas fa-dice-d20"></i> Roll
                             </button>
                         </div>
@@ -1192,7 +1114,7 @@
                 </div>
 
                 {{!-- Revise Planning --}}
-                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                <div class="action-card">
                     <div class="action-header">
                         <h3><i class="fas fa-map-marked-alt"></i> Revise Planning</h3>
                         <span class="action-cost">Free</span>
@@ -1214,98 +1136,7 @@
                                 <option value="{{this.id}}">{{this.name}}</option>
                                 {{/each}}
                             </select>
-                            <button type="button" class="action-button" data-action="revise-planning" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
-                                <i class="fas fa-dice-d20"></i> Roll
-                            </button>
-                        </div>
-                        {{/if}}
-                    </div>
-                </div>
-
-                {{!-- Trapping --}}
-                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
-                    <div class="action-header">
-                        <h3><i class="fas fa-cut"></i> Trapping</h3>
-                        <span class="action-cost">Free</span>
-                    </div>
-                    <div class="action-body">
-                        <div class="action-skill">Skill: Set Trap (Average +20)</div>
-                        <div class="action-description">
-                            <strong>Success:</strong> +1 provisions (+1 per 2 SL)<br>
-                            <strong>Critical:</strong> +2 additional provisions<br>
-                            <strong>Failure:</strong> Nothing caught<br>
-                            <em>Once set, becomes free action on subsequent camp days</em>
-                        </div>
-                        {{#if editable}}
-                        <div class="character-selector" data-action="trapping">
-                            <label>Select Character:</label>
-                            <select class="action-character-select">
-                                <option value="">Choose character...</option>
-                                {{#each linkedCharacters}}
-                                <option value="{{this.id}}">{{this.name}}</option>
-                                {{/each}}
-                            </select>
-                            <button type="button" class="action-button" data-action="trapping" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
-                                <i class="fas fa-dice-d20"></i> Roll
-                            </button>
-                        </div>
-                        {{/if}}
-                    </div>
-                </div>
-
-                {{!-- Self Improvement --}}
-                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
-                    <div class="action-header">
-                        <h3><i class="fas fa-book-reader"></i> Self Improvement</h3>
-                        <span class="action-cost">Free</span>
-                    </div>
-                    <div class="action-body">
-                        <div class="action-skill">Skill: Pray or Lore (Any) (Average +20)</div>
-                        <div class="action-description">
-                            <strong>Success:</strong> +10 to next check using chosen skill or related skill<br>
-                            <em>Example: Lore (Magic) can give +10 to channeling</em>
-                        </div>
-                        {{#if editable}}
-                        <div class="character-selector" data-action="self-improvement">
-                            <label>Select Character:</label>
-                            <select class="action-character-select">
-                                <option value="">Choose character...</option>
-                                {{#each linkedCharacters}}
-                                <option value="{{this.id}}">{{this.name}}</option>
-                                {{/each}}
-                            </select>
-                            <button type="button" class="action-button" data-action="self-improvement" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
-                                <i class="fas fa-dice-d20"></i> Roll
-                            </button>
-                        </div>
-                        {{/if}}
-                    </div>
-                </div>
-
-                {{!-- Scout the Area --}}
-                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
-                    <div class="action-header">
-                        <h3><i class="fas fa-eye"></i> Scout the Area</h3>
-                        <span class="action-cost">Free</span>
-                    </div>
-                    <div class="action-body">
-                        <div class="action-skill">Skill: Perception (Average +20)</div>
-                        <div class="action-description">
-                            <strong>Success:</strong> GM reveals days/JP until next event<br>
-                            <strong>Critical:</strong> GM reveals event, may spend 2 JP to choose "No Event"<br>
-                            <strong>Failure:</strong> Nothing found<br>
-                            <em>Expands vision one hex in all directions</em>
-                        </div>
-                        {{#if editable}}
-                        <div class="character-selector" data-action="scout-area">
-                            <label>Select Character:</label>
-                            <select class="action-character-select">
-                                <option value="">Choose character...</option>
-                                {{#each linkedCharacters}}
-                                <option value="{{this.id}}">{{this.name}}</option>
-                                {{/each}}
-                            </select>
-                            <button type="button" class="action-button" data-action="scout-area" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                            <button type="button" class="action-button" data-action="revise-planning">
                                 <i class="fas fa-dice-d20"></i> Roll
                             </button>
                         </div>
