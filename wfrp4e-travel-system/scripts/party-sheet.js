@@ -1133,27 +1133,24 @@ export class PartySheet extends ActorSheet {
         const consumables = this.actor.getFlag('wfrp4e-travel-system', 'resources.consumables') || {};
         const provisions = this.actor.getFlag('wfrp4e-travel-system', 'resources.provisions') || 0;
         const mountProvisions = this.actor.getFlag('wfrp4e-travel-system', 'resources.mountProvisions') || 0;
-        const linkedCharacters = this.actor.getFlag('wfrp4e-travel-system', 'linkedCharacters') || [];
-        const partySize = linkedCharacters.length;
         
-        // Calculate total cost to refund (in silver shillings equivalent)
-        // Only count positive values
-        const provisionsCost = Math.max(0, provisions) * partySize; // in silver
-        const mountProvisionsCost = Math.ceil(Math.max(0, mountProvisions) * 6 / 12); // convert brass to silver (12bp = 1ss)
+        // Calculate PP refund based on actual PP costs (only count positive values)
+        let ppRefund = 0;
         
-        const consumablesCost = 
-            Math.max(0, consumables.campSupplies || 0) * 1 +
-            Math.max(0, consumables.spirits || 0) * 1 +
-            Math.max(0, consumables.preservatives || 0) * 5 +
-            Math.max(0, consumables.survivalTools || 0) * 4 +
-            Math.max(0, consumables.medicinalHerbs || 0) * 3; // in silver
+        // Provisions: 0 PP cost (just currency)
+        // Mount Provisions: 0 PP cost (just currency)
         
-        const specialItemsCost = Math.max(0, consumables.specializedEquipment || 0) * 10; // in silver
+        // Basic consumables: 1 PP each
+        ppRefund += Math.max(0, consumables.campSupplies || 0) * 1;
+        ppRefund += Math.max(0, consumables.spirits || 0) * 1;
+        ppRefund += Math.max(0, consumables.preservatives || 0) * 1;
+        ppRefund += Math.max(0, consumables.survivalTools || 0) * 1;
+        ppRefund += Math.max(0, consumables.medicinalHerbs || 0) * 1;
         
-        const totalCostSilver = provisionsCost + mountProvisionsCost + consumablesCost + specialItemsCost;
-        
-        // Convert to PP (1 PP = 5 silver shillings)
-        const ppRefund = Math.floor(totalCostSilver / 5);
+        // Special items
+        ppRefund += Math.max(0, consumables.specializedEquipment || 0) * 2;
+        ppRefund += Math.max(0, consumables.updatedMaps || 0) * 2;
+        ppRefund += (consumables.meticulousPlanning ? 5 : 0);
         
         // Reset provisions
         await this.actor.setFlag('wfrp4e-travel-system', 'resources.provisions', 0);
