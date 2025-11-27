@@ -479,6 +479,7 @@ export class PartySheet extends ActorSheet {
         
         const consumablesCost = 
             (consumables.campSupplies || 0) * 1 +
+            (consumables.spirits || 0) * 1 +
             (consumables.preservatives || 0) * 5 +
             (consumables.survivalTools || 0) * 4 +
             (consumables.medicinalHerbs || 0) * 3; // in silver shillings
@@ -1142,6 +1143,7 @@ export class PartySheet extends ActorSheet {
         
         const consumablesCost = 
             Math.max(0, consumables.campSupplies || 0) * 1 +
+            Math.max(0, consumables.spirits || 0) * 1 +
             Math.max(0, consumables.preservatives || 0) * 5 +
             Math.max(0, consumables.survivalTools || 0) * 4 +
             Math.max(0, consumables.medicinalHerbs || 0) * 3; // in silver
@@ -1173,11 +1175,8 @@ export class PartySheet extends ActorSheet {
             await this.actor.setFlag('wfrp4e-travel-system', 'resources.preparednessPool', currentPP + ppRefund);
         }
         
-        // Update cost display
-        this._updateCostDisplay();
-        
-        // Re-render to update all displays
-        this.render(false);
+        // Force full sheet re-render to update all displays
+        await this.render(true);
         
         if (ppRefund > 0) {
             ui.notifications.info(`All consumables reset to 0. Refunded ${ppRefund} Preparedness Pool.`);
