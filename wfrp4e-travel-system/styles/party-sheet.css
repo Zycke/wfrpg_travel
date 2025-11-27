@@ -1602,3 +1602,169 @@
     font-style: italic;
     color: #666;
 }
+
+/* =========================
+   Events Tab
+   ========================= */
+
+.party-sheet .events-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 15px;
+}
+
+.party-sheet .events-section {
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 15px;
+}
+
+.party-sheet .events-section h2 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #333;
+    border-bottom: 2px solid #7b2cbf;
+    padding-bottom: 5px;
+}
+
+.party-sheet .event-roller {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.party-sheet .modifier-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.party-sheet .modifier-control label {
+    font-weight: bold;
+    min-width: 120px;
+}
+
+.party-sheet .modifier-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.party-sheet .modifier-btn {
+    background: #7b2cbf;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.party-sheet .modifier-btn:hover {
+    background: #9d4edd;
+}
+
+.party-sheet .modifier-value {
+    min-width: 50px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #7b2cbf;
+}
+
+.party-sheet .roll-event-btn {
+    background: #ff6b35;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background 0.2s;
+    align-self: flex-start;
+}
+
+.party-sheet .roll-event-btn:hover {
+    background: #ff8555;
+}
+
+.party-sheet .roll-event-btn i {
+    margin-right: 8px;
+}
+
+.party-sheet .last-roll {
+    background: rgba(255, 107, 53, 0.1);
+    border-left: 3px solid #ff6b35;
+    padding: 10px;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.party-sheet .watch-warning-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.party-sheet .watch-alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.party-sheet .watch-alert i {
+    font-size: 18px;
+}
+
+.party-sheet .watch-alert.danger {
+    background: rgba(211, 47, 47, 0.1);
+    border: 1px solid #d32f2f;
+    color: #c62828;
+}
+
+.party-sheet .watch-alert.warning {
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid #ff9800;
+    color: #e65100;
+}
+
+.party-sheet .watch-alert.success {
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid #4caf50;
+    color: #2e7d32;
+}
+
+.party-sheet .watch-alert.info {
+    background: rgba(33, 150, 243, 0.1);
+    border: 1px solid #2196f3;
+    color: #1565c0;
+}
+
+.party-sheet .watch-panel-link {
+    text-align: right;
+}
+
+.party-sheet .watch-panel-link a {
+    color: #7b2cbf;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.party-sheet .watch-panel-link a:hover {
+    color: #9d4edd;
+    text-decoration: underline;
+}
+
+.party-sheet .watch-panel-link i {
+    font-size: 11px;
+}

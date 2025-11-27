@@ -65,10 +65,11 @@ export class PartySheet extends ActorSheet {
             }
         }
         
-        // Calculate Journey Pool maximum (base 10 - travel fatigue)
+        // Calculate Journey Pool maximum (base 10 - travel fatigue - danger rating)
         const baseJPMax = 10;
         const travelFatigue = context.resources.travelFatigue || 0;
-        context.resources.journeyPool.max = Math.max(0, baseJPMax - travelFatigue);
+        const dangerRating = context.journey.dangerRating || 0;
+        context.resources.journeyPool.max = Math.max(0, baseJPMax - travelFatigue - dangerRating);
         
         // Add camp tasks data with proper initialization
         if (!partyFlags.camp) {
@@ -161,6 +162,7 @@ export class PartySheet extends ActorSheet {
         const extremeWeather = this._checkExtremeWeather();
         context.weather.isBlizzard = extremeWeather.type === 'blizzard';
         context.weather.isExtremeCold = extremeWeather.type === 'extreme-cold';
+        context.weather.isThunderStorm = extremeWeather.type === 'thunder-storm';
         
         // Calculate exposure
         const exposure = this._calculateExposure();
@@ -218,9 +220,35 @@ export class PartySheet extends ActorSheet {
             activeEffects.push('⚠ BLIZZARD: Movement -50%, Must spend 1 JP/day (or +1 weariness)');
         } else if (context.weather.isExtremeCold) {
             activeEffects.push('⚠ EXTREME COLD: Exposure gain');
+        } else if (context.weather.isThunderStorm) {
+            const hasGear = context.weather.gear?.weatherAppropriateGear;
+            const hasCampSetup = context.weather.gear?.campSetup;
+            const isTraveling = partyFlags.travel?.status === 'traveling';
+            
+            if (isTraveling) {
+                if (hasGear) {
+                    activeEffects.push('⚠ THUNDER STORM: +1 weariness/day (with gear, traveling)');
+                } else {
+                    activeEffects.push('⚠ THUNDER STORM: +2 weariness/day (without gear, traveling)');
+                }
+            } else {
+                // Camping
+                if (hasCampSetup) {
+                    activeEffects.push('⚠ THUNDER STORM: No weariness (camp setup)');
+                } else {
+                    activeEffects.push('⚠ THUNDER STORM: +1 weariness/day (no camp setup)');
+                }
+            }
         }
         
         context.weather.activeEffects = activeEffects.length > 0 ? activeEffects : null;
+        
+        // Events data
+        if (!partyFlags.events) {
+            await this.actor.setFlag('wfrp4e-travel-system', 'events', { modifier: 0, lastRoll: null });
+            partyFlags.events = { modifier: 0, lastRoll: null };
+        }
+        context.events = partyFlags.events || { modifier: 0, lastRoll: null };
         
         // Add system and user info
         context.isGM = game.user.isGM;
@@ -463,6 +491,12 @@ export class PartySheet extends ActorSheet {
         
         // Weather gear checkboxes
         html.find('.weather-gear-checkbox').change(this._onWeatherGearChange.bind(this));
+        
+        // Event modifier buttons
+        html.find('.modifier-btn').click(this._onModifierChange.bind(this));
+        
+        // Roll event button
+        html.find('.roll-event-btn').click(this._onRollEvent.bind(this));
     }
     
     /**
@@ -1574,11 +1608,27 @@ export class PartySheet extends ActorSheet {
             (weather.wind === 'strong' || weather.wind === 'very-strong')
         );
         
-        // Blizzard takes precedence
-        if (isBlizzard) {
+        const isThunderStorm = (
+            (weather.precipitation === 'heavy' || weather.precipitation === 'very-heavy') &&
+            (weather.wind === 'strong' || weather.wind === 'very-strong')
+        );
+        
+        // Apply precedence rules
+        // If Thunder Storm AND Extreme Cold both true → Blizzard
+        if (isThunderStorm && isExtremeCold) {
             return { type: 'blizzard', isExtreme: true };
-        } else if (isExtremeCold) {
+        }
+        // Blizzard takes precedence over everything
+        else if (isBlizzard) {
+            return { type: 'blizzard', isExtreme: true };
+        }
+        // Extreme Cold takes precedence over Thunder Storm
+        else if (isExtremeCold) {
             return { type: 'extreme-cold', isExtreme: true };
+        }
+        // Thunder Storm
+        else if (isThunderStorm) {
+            return { type: 'thunder-storm', isExtreme: true };
         }
         
         return { type: 'normal', isExtreme: false };
@@ -1791,7 +1841,15 @@ export class PartySheet extends ActorSheet {
         const exposureCalc = this._calculateExposure();
         const exposureGain = isTraveling ? exposureCalc.travelingExposure : exposureCalc.campingExposure;
         let newExposure = exposure;
-        if (exposureGain > 0) {
+        
+        // Auto-reset exposure if no gain and no extreme weather
+        if (exposureGain < 1 && !isBlizzard && extremeWeather.type !== 'extreme-cold') {
+            if (exposure > 0) {
+                newExposure = 0;
+                await this.actor.setFlag('wfrp4e-travel-system', 'resources.exposure', 0);
+                summary.push(`Exposure reset to 0 (favorable conditions)`);
+            }
+        } else if (exposureGain > 0) {
             newExposure = exposure + exposureGain;
             await this.actor.setFlag('wfrp4e-travel-system', 'resources.exposure', newExposure);
             summary.push(`Gained +${exposureGain} exposure (${isTraveling ? 'traveling' : 'camping'})`);
@@ -1869,6 +1927,56 @@ export class PartySheet extends ActorSheet {
         ui.notifications.info(`<strong>Day ${currentDays + 1}</strong><br>` + summary.join('<br>'));
         
         // Re-render sheet
+        this.render(false);
+    }
+    
+    /**
+     * Handle event modifier +/- buttons
+     */
+    async _onModifierChange(event) {
+        event.preventDefault();
+        const button = event.currentTarget;
+        const action = button.dataset.action;
+        
+        const currentModifier = this.actor.getFlag('wfrp4e-travel-system', 'events.modifier') || 0;
+        let newModifier = currentModifier;
+        
+        if (action === 'increase') {
+            newModifier = Math.min(50, currentModifier + 10);
+        } else if (action === 'decrease') {
+            newModifier = Math.max(-50, currentModifier - 10);
+        }
+        
+        await this.actor.setFlag('wfrp4e-travel-system', 'events.modifier', newModifier);
+        this.render(false);
+    }
+    
+    /**
+     * Handle Roll Event button
+     */
+    async _onRollEvent(event) {
+        event.preventDefault();
+        
+        const modifier = this.actor.getFlag('wfrp4e-travel-system', 'events.modifier') || 0;
+        
+        // Roll d100
+        const roll = await new Roll('1d100').roll({async: true});
+        const baseResult = roll.total;
+        const finalResult = baseResult + modifier;
+        
+        // Store last roll
+        await this.actor.setFlag('wfrp4e-travel-system', 'events.lastRoll', {
+            base: baseResult,
+            modifier: modifier,
+            total: finalResult
+        });
+        
+        // Show roll in chat
+        await roll.toMessage({
+            speaker: ChatMessage.getSpeaker({actor: this.actor}),
+            flavor: `<h3>Event Roll</h3><p>Base: ${baseResult} + Modifier: ${modifier} = <strong>${finalResult}</strong></p><p><em>GM: Reference event table for result</em></p>`
+        });
+        
         this.render(false);
     }
 }
