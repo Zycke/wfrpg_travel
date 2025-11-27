@@ -92,7 +92,6 @@ export class PartySheet extends ActorSheet {
             // Extract first name only for Tasks panel
             char.firstName = char.name.split(' ')[0];
         }
-        }
         
         // Calculate watch statistics
         context.watchCount = 0;
