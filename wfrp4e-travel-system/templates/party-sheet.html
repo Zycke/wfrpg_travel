@@ -146,7 +146,12 @@
                         
                         {{!-- Journey Pool --}}
                         <div class="progress-item">
-                            <label>{{localize "TRAVEL.Overview.JourneyPool"}}</label>
+                            <label>
+                                {{localize "TRAVEL.Overview.JourneyPool"}}
+                                {{#if weather.blizzardTraveling}}
+                                <span class="warning-inline">⚠ (Blizzard: -1 JP/day)</span>
+                                {{/if}}
+                            </label>
                             <div class="progress-value">
                                 {{#if editable}}
                                 <button type="button" class="resource-control" data-action="decrease" data-resource="resources.journeyPool.current">
@@ -155,9 +160,6 @@
                                 {{/if}}
                                 <span class="value-display">
                                     {{resources.journeyPool.current}} / {{resources.journeyPool.max}}
-                                    {{#if weather.blizzardTraveling}}
-                                    <span class="weather-warning">⚠ (Blizzard: -1 JP/day)</span>
-                                    {{/if}}
                                 </span>
                                 {{#if editable}}
                                 <button type="button" class="resource-control" data-action="increase" data-resource="resources.journeyPool.current">
@@ -169,7 +171,12 @@
 
                         {{!-- Provisions --}}
                         <div class="progress-item">
-                            <label>{{localize "TRAVEL.Overview.Provisions"}}</label>
+                            <label>
+                                {{localize "TRAVEL.Overview.Provisions"}}
+                                {{#if weather.extremeTempProvisions}}
+                                <span class="warning-inline">⚠ (2x usage)</span>
+                                {{/if}}
+                            </label>
                             <div class="progress-value">
                                 {{#if editable}}
                                 <button type="button" class="resource-control" data-action="decrease" data-resource="resources.provisions">
@@ -178,9 +185,6 @@
                                 {{/if}}
                                 <span class="value-display">
                                     {{resources.provisions}} {{localize "TRAVEL.Overview.Days"}}
-                                    {{#if weather.extremeTempProvisions}}
-                                    <span class="weather-warning">⚠ (2x usage)</span>
-                                    {{/if}}
                                 </span>
                                 {{#if editable}}
                                 <button type="button" class="resource-control" data-action="increase" data-resource="resources.provisions">
@@ -242,29 +246,29 @@
                         <div class="weather-item">
                             <i class="fas fa-temperature-high"></i>
                             <span class="weather-label">{{localize "TRAVEL.Overview.Temperature"}}:</span>
-                            <span class="weather-value temperature-{{weather.temperature}}">
-                                {{localize (concat "TRAVEL.Weather.Temperature." weather.temperature)}}
+                            <span class="weather-value temperature-{{weather.current.temperature}}">
+                                {{localize (concat "TRAVEL.Weather.Temperature." weather.current.temperature)}}
                             </span>
                         </div>
                         <div class="weather-item">
                             <i class="fas fa-cloud-rain"></i>
                             <span class="weather-label">{{localize "TRAVEL.Overview.Precipitation"}}:</span>
                             <span class="weather-value">
-                                {{localize (concat "TRAVEL.Weather.Precipitation." weather.precipitation)}}
+                                {{localize (concat "TRAVEL.Weather.Precipitation." weather.current.precipitation)}}
                             </span>
                         </div>
                         <div class="weather-item">
                             <i class="fas fa-eye"></i>
                             <span class="weather-label">Visibility:</span>
                             <span class="weather-value">
-                                {{localize (concat "TRAVEL.Weather.Visibility." weather.visibility)}}
+                                {{localize (concat "TRAVEL.Weather.Visibility." weather.current.visibility)}}
                             </span>
                         </div>
                         <div class="weather-item">
                             <i class="fas fa-wind"></i>
                             <span class="weather-label">Wind:</span>
                             <span class="weather-value">
-                                {{localize (concat "TRAVEL.Weather.Wind." weather.wind)}}
+                                {{localize (concat "TRAVEL.Weather.Wind." weather.current.wind)}}
                             </span>
                         </div>
                         
@@ -279,13 +283,6 @@
                             </ul>
                         </div>
                         {{/if}}
-                        
-                        {{!-- Link to Weather Tab --}}
-                        <div class="weather-tab-link">
-                            <a class="tab-link" data-tab="weather">
-                                <i class="fas fa-arrow-right"></i> Weather & Terrain
-                            </a>
-                        </div>
                     </div>
                 </div>
 

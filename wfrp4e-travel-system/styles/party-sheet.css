@@ -479,6 +479,14 @@
     margin-left: 4px;
 }
 
+.party-sheet .warning-inline {
+    display: inline;
+    color: #d32f2f;
+    font-weight: normal;
+    font-size: 11px;
+    margin-left: 4px;
+}
+
 .party-sheet .exposure-none {
     display: inline;
     color: #999;

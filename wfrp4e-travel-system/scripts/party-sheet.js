@@ -181,20 +181,20 @@ export class PartySheet extends ActorSheet {
         // Temperature effects
         if (context.weather.current.temperature === 'sweltering' || context.weather.current.temperature === 'bitter') {
             activeEffects.push('2x provisions usage');
-            activeEffects.push('+2 weariness (when JP=0 or on events)');
+            activeEffects.push('+2 weariness on event trigger');
         } else if (context.weather.current.temperature === 'hot' || context.weather.current.temperature === 'chilly') {
-            activeEffects.push('+1 weariness (when JP=0 or on events)');
+            activeEffects.push('+1 weariness on event trigger');
         }
         
         // Precipitation effects (only with cold temperatures)
         if ((context.weather.current.temperature === 'chilly' || context.weather.current.temperature === 'bitter') &&
             context.weather.current.precipitation !== 'none') {
             if (context.weather.current.precipitation === 'light') {
-                activeEffects.push('+1 weariness from cold precipitation');
+                activeEffects.push('+1 weariness on event trigger');
             } else if (context.weather.current.precipitation === 'heavy') {
-                activeEffects.push('+2 weariness from cold precipitation');
+                activeEffects.push('+2 weariness on event trigger');
             } else if (context.weather.current.precipitation === 'very-heavy') {
-                activeEffects.push('+3 weariness from cold precipitation');
+                activeEffects.push('+3 weariness on event trigger');
             }
         }
         
@@ -1605,6 +1605,24 @@ export class PartySheet extends ActorSheet {
             travelingExposure = gear.weatherAppropriateGear ? 1 : 3;
             campingExposure = gear.campSetup ? 0 : travelingExposure;
             explanation = `Extreme cold conditions: ${gear.weatherAppropriateGear ? '1' : '3'} exposure/day when traveling${gear.weatherAppropriateGear ? ' (with gear)' : ' (without gear)'}. ${gear.campSetup ? 'No exposure gain/loss' : 'Same as traveling'} when camping${gear.campSetup ? ' (camp setup)' : ' (no camp setup)'}.`;
+        } else if (weather.temperature === 'bitter' || weather.temperature === 'sweltering') {
+            // Extreme temperatures without extreme weather
+            if (!gear.weatherAppropriateGear) {
+                travelingExposure = 2;
+            }
+            if (!gear.campSetup) {
+                campingExposure = 2;
+            }
+            explanation = `${this._capitalizeWeather(weather.temperature)} temperature: ${travelingExposure} exposure/day when traveling${gear.weatherAppropriateGear ? ' (with gear)' : ' (without gear)'}. ${campingExposure} exposure/day when camping${gear.campSetup ? ' (camp setup)' : ' (no camp setup)'}.`;
+        } else if (weather.temperature === 'chilly' || weather.temperature === 'hot') {
+            // Moderate extreme temperatures
+            if (!gear.weatherAppropriateGear) {
+                travelingExposure = 1;
+            }
+            if (!gear.campSetup) {
+                campingExposure = 1;
+            }
+            explanation = `${this._capitalizeWeather(weather.temperature)} temperature: ${travelingExposure} exposure/day when traveling${gear.weatherAppropriateGear ? ' (with gear)' : ' (without gear)'}. ${campingExposure} exposure/day when camping${gear.campSetup ? ' (camp setup)' : ' (no camp setup)'}.`;
         } else {
             explanation = 'Normal weather conditions: No exposure gain.';
         }
