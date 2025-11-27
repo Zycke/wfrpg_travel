@@ -317,8 +317,6 @@ export class PartySheet extends ActorSheet {
      * @returns {Object} - Object with wearinessGained and fatigueGained
      */
     async _addWeariness(amount) {
-        if (amount <= 0) return { wearinessGained: 0, fatigueGained: 0 };
-        
         const linkedCharacters = this.actor.getFlag('wfrp4e-travel-system', 'linkedCharacters') || [];
         const characterData = this._getLinkedCharacters(linkedCharacters);
         const currentWeariness = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
@@ -335,7 +333,7 @@ export class PartySheet extends ActorSheet {
             return { wearinessGained: amount, fatigueGained: 0 };
         }
         
-        // Calculate overflow
+        // Calculate overflow (includes current weariness + new amount)
         const totalWeariness = currentWeariness + amount;
         const fatigueGained = Math.floor(totalWeariness / wearinessThreshold);
         const newWeariness = totalWeariness % wearinessThreshold;
@@ -482,6 +480,21 @@ export class PartySheet extends ActorSheet {
         // Special handling for Days on Road increase
         if (resourcePath === 'journey.daysOnRoad' && action === 'increase') {
             await this._onDaysOnRoadIncrease();
+            return;
+        }
+        
+        // Special handling for weariness - use overflow method
+        if (resourcePath === 'resources.weariness') {
+            const currentValue = this.actor.getFlag('wfrp4e-travel-system', resourcePath) || 0;
+            
+            if (action === 'increase') {
+                const result = await this._addWeariness(1);
+                if (result.fatigueGained > 0) {
+                    ui.notifications.warn(`Weariness overflow! Gained +${result.fatigueGained} Travel Fatigue.`);
+                }
+            } else if (action === 'decrease') {
+                await this.actor.setFlag('wfrp4e-travel-system', resourcePath, Math.max(0, currentValue - 1));
+            }
             return;
         }
         
@@ -1591,11 +1604,17 @@ export class PartySheet extends ActorSheet {
         const hunger = this.actor.getFlag('wfrp4e-travel-system', 'resources.hunger') || 0;
         const exposure = this.actor.getFlag('wfrp4e-travel-system', 'resources.exposure') || 0;
         const linkedCharacters = this.actor.getFlag('wfrp4e-travel-system', 'linkedCharacters') || [];
+        const hasMounts = this.actor.getFlag('wfrp4e-travel-system', 'travel.hasMounts') || false;
+        const isGrazing = this.actor.getFlag('wfrp4e-travel-system', 'travel.grazing') || false;
+        const mountProvisions = this.actor.getFlag('wfrp4e-travel-system', 'resources.mountProvisions') || 0;
         const partySize = linkedCharacters.length;
         
         // Calculate provisions needed (2x if Sweltering/Bitter)
         const isExtremeTempProvisions = (weather.temperature === 'sweltering' || weather.temperature === 'bitter');
         const provisionsNeeded = isExtremeTempProvisions ? 2 : 1; // 1 provision feeds whole party
+        
+        // Check if mount provisions needed
+        const mountProvisionsNeeded = (hasMounts && !isGrazing) ? 1 : 0;
         
         // Check for blizzard
         const extremeWeather = this._checkExtremeWeather();
@@ -1610,6 +1629,15 @@ export class PartySheet extends ActorSheet {
             confirmMsg += `<li>Consume ${provisionsNeeded} provisions${isExtremeTempProvisions ? ` (2x due to ${this._capitalizeWeather(weather.temperature)} temperature)` : ''}</li>`;
         } else {
             confirmMsg += `<li><strong style="color: #d32f2f;">⚠ Provisions exhausted!</strong> Hunger will increase by +1</li>`;
+        }
+        
+        // Mount Provisions
+        if (mountProvisionsNeeded > 0) {
+            if (mountProvisions >= mountProvisionsNeeded) {
+                confirmMsg += `<li>Consume ${mountProvisionsNeeded} mount provisions</li>`;
+            } else {
+                confirmMsg += `<li><strong style="color: #d32f2f;">⚠ Mount provisions exhausted!</strong></li>`;
+            }
         }
         
         // Hunger recovery
@@ -1662,6 +1690,18 @@ export class PartySheet extends ActorSheet {
             summary.push(`⚠ Provisions exhausted! Hunger increased to ${newHunger}`);
         }
         
+        // Step 1b: Consume mount provisions (if needed)
+        if (mountProvisionsNeeded > 0) {
+            if (mountProvisions >= mountProvisionsNeeded) {
+                const newMountProvisions = mountProvisions - mountProvisionsNeeded;
+                await this.actor.setFlag('wfrp4e-travel-system', 'resources.mountProvisions', newMountProvisions);
+                summary.push(`Consumed ${mountProvisionsNeeded} mount provisions`);
+            } else {
+                await this.actor.setFlag('wfrp4e-travel-system', 'resources.mountProvisions', 0);
+                summary.push(`⚠ Mount provisions exhausted!`);
+            }
+        }
+        
         // Step 2: Check hunger recovery
         if (hunger > 0 && newProvisions > 0) {
             newHunger = 0;
@@ -1702,10 +1742,20 @@ export class PartySheet extends ActorSheet {
         }
         
         // Step 6: Apply weariness and handle overflow to Travel Fatigue
+        // Always check for overflow, even if no new weariness (in case current > threshold)
         if (totalWearinessGain > 0) {
             const result = await this._addWeariness(totalWearinessGain);
             if (result.fatigueGained > 0) {
                 summary.push(`⚠ Weariness overflow! Gained +${result.fatigueGained} Travel Fatigue (${result.newWeariness} weariness remaining)`);
+            }
+        } else {
+            // No new weariness, but check if current weariness needs conversion
+            const currentWeariness = this.actor.getFlag('wfrp4e-travel-system', 'resources.weariness') || 0;
+            if (currentWeariness > 0) {
+                const result = await this._addWeariness(0); // Force overflow check
+                if (result.fatigueGained > 0) {
+                    summary.push(`⚠ Weariness overflow! Gained +${result.fatigueGained} Travel Fatigue (${result.newWeariness} weariness remaining)`);
+                }
             }
         }
         
