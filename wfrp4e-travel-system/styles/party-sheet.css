@@ -1115,7 +1115,7 @@
 .party-sheet .tasks-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
 }
 
 .party-sheet .task-row {
@@ -1149,7 +1149,7 @@
     color: #666;
     transition: all 0.2s;
     flex: 0 0 70px;
-    height: 28px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1180,7 +1180,7 @@
     border-radius: 4px;
     font-size: 12px;
     background: white;
-    height: 28px;
+    height: 24px;
 }
 
 /* Watch Panel */
