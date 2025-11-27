@@ -1137,8 +1137,9 @@ export class PartySheet extends ActorSheet {
         // Calculate PP refund based on actual PP costs (only count positive values)
         let ppRefund = 0;
         
-        // Provisions: 0 PP cost (just currency)
-        // Mount Provisions: 0 PP cost (just currency)
+        // Provisions and Mount Provisions: 1 PP each
+        ppRefund += Math.max(0, provisions) * 1;
+        ppRefund += Math.max(0, mountProvisions) * 1;
         
         // Basic consumables: 1 PP each
         ppRefund += Math.max(0, consumables.campSupplies || 0) * 1;
