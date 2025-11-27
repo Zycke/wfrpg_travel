@@ -59,12 +59,38 @@ export class PartySheet extends ActorSheet {
         // Calculate weariness threshold if characters are linked
         if (context.linkedCharacters.length > 0) {
             context.resources.wearinessThreshold = this._calculateWearinessThreshold(context.linkedCharacters);
+            // Add +2 to threshold if party has mounts
+            if (context.travel.options?.hasMounts) {
+                context.resources.wearinessThreshold += 2;
+            }
         }
         
         // Calculate Journey Pool maximum (base 10 - travel fatigue)
         const baseJPMax = 10;
         const travelFatigue = context.resources.travelFatigue || 0;
         context.resources.journeyPool.max = Math.max(0, baseJPMax - travelFatigue);
+        
+        // Add camp tasks data
+        context.camp = partyFlags.camp || { tasks: {} };
+        
+        // Calculate watch statistics
+        context.watchCount = 0;
+        context.hasRecuperate1 = false;
+        context.hasRecuperate2Plus = false;
+        let recuperateCount = 0;
+        
+        for (const char of context.linkedCharacters) {
+            const task = context.camp.tasks[char.id];
+            if (task && task.keepingWatch) {
+                context.watchCount++;
+                if (task.selectedAction === 'recuperate') {
+                    recuperateCount++;
+                }
+            }
+        }
+        
+        context.hasRecuperate1 = (context.watchCount === 1 && recuperateCount === 1);
+        context.hasRecuperate2Plus = (context.watchCount >= 2 && recuperateCount >= 2);
         
         // Add system and user info
         context.isGM = game.user.isGM;
@@ -145,6 +171,9 @@ export class PartySheet extends ActorSheet {
                 precipitation: 'none',
                 visibility: 'clear',
                 wind: 'still'
+            },
+            camp: {
+                tasks: {} // Will store characterId: { keepingWatch: false, selectedAction: null }
             }
         };
         
@@ -222,6 +251,15 @@ export class PartySheet extends ActorSheet {
         
         // Action buttons
         html.find('.action-button').click(this._onActionRoll.bind(this));
+        
+        // Reset consumables button
+        html.find('.reset-consumables-btn').click(this._onResetConsumables.bind(this));
+        
+        // Watch toggle
+        html.find('.watch-toggle').click(this._onWatchToggle.bind(this));
+        
+        // Task action select
+        html.find('.task-action-select').change(this._onTaskActionChange.bind(this));
     }
     
     /**
@@ -664,6 +702,23 @@ export class PartySheet extends ActorSheet {
                 skill: 'Leadership',
                 difficulty: 'average',
                 isTravelAction: false
+            },
+            'trapping': {
+                skill: 'Set Trap',
+                difficulty: 'average',
+                isTravelAction: false
+            },
+            'self-improvement': {
+                skill: 'Pray',
+                difficulty: 'average',
+                fallbackSkill: 'Lore',
+                fallbackDifficulty: 'average',
+                isTravelAction: false
+            },
+            'scout-area': {
+                skill: 'Perception',
+                difficulty: 'average',
+                isTravelAction: false
             }
         };
         
@@ -928,6 +983,33 @@ export class PartySheet extends ActorSheet {
                     }
                 }
                 break;
+                
+            case 'trapping':
+                if (success) {
+                    let provisions = 1;
+                    if (isCritical) provisions += 2;
+                    provisions += Math.floor(sl / 2);
+                    await this._adjustProvisions(provisions);
+                    ui.notifications.info(`Traps caught ${provisions} provisions. Becomes free action on subsequent days`);
+                }
+                break;
+                
+            case 'self-improvement':
+                if (success) {
+                    ui.notifications.info("+10 to next check with chosen skill or related skill");
+                }
+                break;
+                
+            case 'scout-area':
+                if (success) {
+                    const hexes = this.actor.getFlag('wfrp4e-travel-system', 'journey.hexesUntilEvent') || 0;
+                    if (isCritical) {
+                        ui.notifications.info(`Days/JP until event: ${hexes}. GM should reveal event. May spend 2 JP to choose "No Event"`);
+                    } else {
+                        ui.notifications.info(`Days/JP until event: ${hexes}. Vision expanded one hex in all directions`);
+                    }
+                }
+                break;
         }
     }
     
@@ -946,5 +1028,85 @@ export class PartySheet extends ActorSheet {
         const current = this.actor.getFlag('wfrp4e-travel-system', 'resources.provisions') || 0;
         await this.actor.setFlag('wfrp4e-travel-system', 'resources.provisions', Math.max(0, current + amount));
         this._updateCostDisplay();
+    }
+    
+    /**
+     * Handle watch toggle
+     */
+    async _onWatchToggle(event) {
+        event.preventDefault();
+        const characterId = event.currentTarget.dataset.characterId;
+        
+        const tasks = this.actor.getFlag('wfrp4e-travel-system', 'camp.tasks') || {};
+        
+        // Initialize task for this character if it doesn't exist
+        if (!tasks[characterId]) {
+            tasks[characterId] = { keepingWatch: false, selectedAction: null };
+        }
+        
+        // Toggle watch status
+        tasks[characterId].keepingWatch = !tasks[characterId].keepingWatch;
+        
+        await this.actor.setFlag('wfrp4e-travel-system', 'camp.tasks', tasks);
+        this.render(false);
+    }
+    
+    /**
+     * Handle task action selection change
+     */
+    async _onTaskActionChange(event) {
+        event.preventDefault();
+        const characterId = event.currentTarget.dataset.characterId;
+        const selectedAction = event.currentTarget.value;
+        
+        const tasks = this.actor.getFlag('wfrp4e-travel-system', 'camp.tasks') || {};
+        
+        // Initialize task for this character if it doesn't exist
+        if (!tasks[characterId]) {
+            tasks[characterId] = { keepingWatch: false, selectedAction: null };
+        }
+        
+        // Update selected action
+        tasks[characterId].selectedAction = selectedAction || null;
+        
+        await this.actor.setFlag('wfrp4e-travel-system', 'camp.tasks', tasks);
+    }
+    
+    /**
+     * Reset all consumables to 0
+     */
+    async _onResetConsumables(event) {
+        event.preventDefault();
+        
+        const confirm = await Dialog.confirm({
+            title: "Reset All Consumables",
+            content: "<p>This will reset all provisions, mount provisions, consumables, and special items to 0.</p><p>Are you sure?</p>",
+            defaultYes: false
+        });
+        
+        if (!confirm) return;
+        
+        // Reset provisions
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.provisions', 0);
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.mountProvisions', 0);
+        
+        // Reset all consumables
+        const consumables = {
+            campSupplies: 0,
+            spirits: 0,
+            preservatives: 0,
+            survivalTools: 0,
+            medicinalHerbs: 0,
+            specializedEquipment: 0,
+            updatedMaps: 0,
+            meticulousPlanning: false
+        };
+        
+        await this.actor.setFlag('wfrp4e-travel-system', 'resources.consumables', consumables);
+        
+        // Update cost display
+        this._updateCostDisplay();
+        
+        ui.notifications.info("All consumables reset to 0");
     }
 }
