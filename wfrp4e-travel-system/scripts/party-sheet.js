@@ -334,9 +334,17 @@ export class PartySheet extends ActorSheet {
         }
         
         // Calculate overflow (includes current weariness + new amount)
+        // Weariness should stay at 0 to threshold, only converting when > threshold
         const totalWeariness = currentWeariness + amount;
-        const fatigueGained = Math.floor(totalWeariness / wearinessThreshold);
-        const newWeariness = totalWeariness % wearinessThreshold;
+        let fatigueGained = 0;
+        let newWeariness = totalWeariness;
+        
+        if (totalWeariness > wearinessThreshold) {
+            // Convert overflow: e.g., threshold=3, weariness=4 → 1 fatigue + 1 weariness
+            fatigueGained = Math.floor((totalWeariness - 1) / wearinessThreshold);
+            newWeariness = ((totalWeariness - 1) % wearinessThreshold) + 1;
+        }
+        
         const newTravelFatigue = currentTravelFatigue + fatigueGained;
         
         // Update values
@@ -1605,7 +1613,7 @@ export class PartySheet extends ActorSheet {
         const exposure = this.actor.getFlag('wfrp4e-travel-system', 'resources.exposure') || 0;
         const linkedCharacters = this.actor.getFlag('wfrp4e-travel-system', 'linkedCharacters') || [];
         const hasMounts = this.actor.getFlag('wfrp4e-travel-system', 'travel.hasMounts') || false;
-        const isGrazing = this.actor.getFlag('wfrp4e-travel-system', 'travel.grazing') || false;
+        const isGrazing = this.actor.getFlag('wfrp4e-travel-system', 'travel.mountsGrazing') || false;
         const mountProvisions = this.actor.getFlag('wfrp4e-travel-system', 'resources.mountProvisions') || 0;
         const partySize = linkedCharacters.length;
         
