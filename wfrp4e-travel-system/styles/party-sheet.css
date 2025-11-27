@@ -426,26 +426,26 @@
     gap: 6px;
 }
 
-.party-sheet .weather-item {
+.party-sheet .weather-summary .weather-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px;
+    padding: 4px 6px;
     background: rgba(255, 255, 255, 0.9);
     border-radius: 5px;
     font-size: 13px;
 }
 
-.party-sheet .weather-item i {
+.party-sheet .weather-summary .weather-item i {
     color: #782e22;
     font-size: 14px;
 }
 
-.party-sheet .weather-label {
+.party-sheet .weather-summary .weather-label {
     font-weight: bold;
 }
 
-.party-sheet .weather-value {
+.party-sheet .weather-summary .weather-value {
     margin-left: auto;
     padding: 2px 8px;
     border-radius: 3px;
@@ -1324,13 +1324,13 @@
     margin-bottom: 15px;
 }
 
-.party-sheet .weather-item {
+.party-sheet .weather-current .weather-item {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
 
-.party-sheet .weather-item label {
+.party-sheet .weather-current .weather-item label {
     font-weight: bold;
     font-size: 12px;
 }
@@ -1465,6 +1465,17 @@
 
 .party-sheet .generate-weather-btn:hover {
     background: #5E35B1;
+}
+
+.party-sheet .exposure-gear-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #999;
+}
+
+.party-sheet .exposure-gear-section h4 {
+    margin-bottom: 10px;
+    font-size: 13px;
 }
 
 .party-sheet .weather-bottom-section {

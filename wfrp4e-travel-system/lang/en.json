@@ -8,7 +8,7 @@
       "Resources": "Resources",
       "TravelActions": "Traveling",
       "CampActions": "Camping",
-      "Weather": "Weather & Events"
+      "Weather": "Weather & Terrain"
     },
     
     "Overview": {
@@ -42,6 +42,7 @@
       "Conditions": "Conditions",
       "Climate": "Climate",
       "Season": "Season",
+      "Terrain": "Terrain",
       "GenerateWeather": "Generate Weather",
       "CurrentWeather": "Weather",
       "ExposureAndGear": "Exposure & Gear",
@@ -59,6 +60,14 @@
         "summer": "Summer",
         "autumn": "Autumn",
         "winter": "Winter"
+      },
+      "Terrains": {
+        "woods": "Woods",
+        "hills": "Hills",
+        "forest": "Forest",
+        "plains": "Plains",
+        "wetlands": "Wetlands",
+        "mountains": "Mountains"
       },
       "Temperature": {
         "sweltering": "Sweltering",

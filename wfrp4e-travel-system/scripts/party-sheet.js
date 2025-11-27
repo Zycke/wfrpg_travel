@@ -136,7 +136,7 @@ export class PartySheet extends ActorSheet {
         
         // Process weather data for template
         if (!context.weather.conditions) {
-            context.weather.conditions = { climate: 'temperate', season: 'summer' };
+            context.weather.conditions = { climate: 'temperate', season: 'summer', terrain: 'plains' };
         }
         if (!context.weather.current) {
             context.weather.current = { temperature: 'comfortable', precipitation: 'none', visibility: 'clear', wind: 'still' };
@@ -148,9 +148,13 @@ export class PartySheet extends ActorSheet {
         // Calculate weather modifiers
         const seasonMod = { spring: 2, summer: 0, autumn: 2, winter: 4 }[context.weather.conditions.season || 'summer'];
         const climateMod = { hot: -2, temperate: 0, cold: 2 }[context.weather.conditions.climate || 'temperate'];
+        const terrainTempMod = (context.weather.conditions.terrain === 'mountains') ? 1 : 0;
+        const terrainWindMod = (context.weather.conditions.terrain === 'mountains') ? 2 : 0;
+        
         context.weather.modifiers = {
-            temperature: `+${seasonMod + climateMod}`,
-            precipitation: `+${seasonMod}`
+            temperature: `+${seasonMod + climateMod + terrainTempMod}`,
+            precipitation: `+${seasonMod}`,
+            wind: terrainWindMod > 0 ? `+${terrainWindMod}` : '+0'
         };
         
         // Check for extreme weather
@@ -243,7 +247,8 @@ export class PartySheet extends ActorSheet {
             weather: {
                 conditions: {
                     climate: 'temperate',
-                    season: 'summer'
+                    season: 'summer',
+                    terrain: 'plains'
                 },
                 current: {
                     temperature: 'comfortable',
@@ -1262,14 +1267,17 @@ export class PartySheet extends ActorSheet {
         
         const climate = this.actor.getFlag('wfrp4e-travel-system', 'weather.conditions.climate') || 'temperate';
         const season = this.actor.getFlag('wfrp4e-travel-system', 'weather.conditions.season') || 'summer';
+        const terrain = this.actor.getFlag('wfrp4e-travel-system', 'weather.conditions.terrain') || 'plains';
         
         // Get modifiers
         const seasonMod = { spring: 2, summer: 0, autumn: 2, winter: 4 }[season];
         const climateMod = { hot: -2, temperate: 0, cold: 2 }[climate];
+        const terrainTempMod = terrain === 'mountains' ? 1 : 0;
+        const terrainWindMod = terrain === 'mountains' ? 2 : 0;
         
-        // Roll 1: Temperature (with both modifiers)
+        // Roll 1: Temperature (with season, climate, and terrain modifiers)
         const tempRoll = Math.floor(Math.random() * 10) + 1;
-        const tempResult = tempRoll + seasonMod + climateMod;
+        const tempResult = tempRoll + seasonMod + climateMod + terrainTempMod;
         const temperature = this._lookupTemperature(tempResult);
         
         // Roll 2: Precipitation (season modifier only)
@@ -1282,9 +1290,10 @@ export class PartySheet extends ActorSheet {
         let visibility = this._lookupVisibility(visRoll);
         let visibilityOverridden = false;
         
-        // Roll 4: Wind (no modifiers)
+        // Roll 4: Wind (with terrain modifier)
         const windRoll = Math.floor(Math.random() * 10) + 1;
-        const wind = this._lookupWind(windRoll);
+        const windResult = windRoll + terrainWindMod;
+        const wind = this._lookupWind(windResult);
         
         // Apply precipitation override to visibility
         if (precipitation === 'heavy') {
@@ -1318,13 +1327,13 @@ export class PartySheet extends ActorSheet {
         
         // Build notification message
         let message = `<strong>Weather Generated:</strong><br>`;
-        message += `Temperature: 1d10(${tempRoll}) + ${seasonMod + climateMod} = ${tempResult} → ${this._capitalizeWeather(temperature)}<br>`;
+        message += `Temperature: 1d10(${tempRoll}) + ${seasonMod + climateMod + terrainTempMod} = ${tempResult} → ${this._capitalizeWeather(temperature)}<br>`;
         message += `Precipitation: 1d10(${precipRoll}) + ${seasonMod} = ${precipResult} → ${this._capitalizeWeather(precipitation)}<br>`;
         message += `Visibility: 1d10(${visRoll}) = ${visRoll} → ${this._capitalizeWeather(visibility)}`;
         if (visibilityOverridden) {
             message += ` <em>(overridden)</em>`;
         }
-        message += `<br>Wind: 1d10(${windRoll}) = ${windRoll} → ${this._capitalizeWeather(wind)}<br>`;
+        message += `<br>Wind: 1d10(${windRoll}) + ${terrainWindMod} = ${windResult} → ${this._capitalizeWeather(wind)}<br>`;
         
         // Add extreme weather warnings
         if (isBlizzard) {

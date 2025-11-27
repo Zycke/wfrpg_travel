@@ -1377,6 +1377,32 @@
                     <div class="weather-effects">
                         <h4>{{localize "TRAVEL.Weather.Effects.Title"}}</h4>
                         
+                        {{!-- Extreme Weather Warnings (at top when relevant) --}}
+                        {{#if weather.isBlizzard}}
+                        <div class="extreme-weather-warning blizzard-warning">
+                            <strong>⚠ BLIZZARD CONDITIONS</strong>
+                            <ul>
+                                <li>Movement speed reduced by 50%</li>
+                                <li>Must spend 1 JP per day to move (or gain +1 weariness if JP = 0)</li>
+                                <li>Visibility automatically set to Poor</li>
+                                <li>With gear: +1 exposure/day traveling</li>
+                                <li>Without gear: +3 exposure/day traveling</li>
+                                <li>Camping: No exposure gain/loss if camp setup, otherwise same as traveling</li>
+                            </ul>
+                        </div>
+                        {{else}}
+                        {{#if weather.isExtremeCold}}
+                        <div class="extreme-weather-warning extreme-cold-warning">
+                            <strong>⚠ EXTREME COLD CONDITIONS</strong>
+                            <ul>
+                                <li>With gear: +1 exposure/day traveling</li>
+                                <li>Without gear: +3 exposure/day traveling</li>
+                                <li>Camping: No exposure gain/loss if camp setup, otherwise same as traveling</li>
+                            </ul>
+                        </div>
+                        {{/if}}
+                        {{/if}}
+                        
                         {{!-- Temperature Effects --}}
                         <div class="effect-section">
                             <strong>{{localize "TRAVEL.Weather.Effects.TemperatureEffects"}}</strong>
@@ -1428,36 +1454,22 @@
                         {{!-- Wind Effects --}}
                         <div class="effect-section">
                             <strong>{{localize "TRAVEL.Weather.Effects.WindEffects"}}</strong>
-                            <div class="effect-item">
-                                Wind only affects extreme weather determination
+                            <div class="effect-item {{#unless (eq weather.current.wind 'still')}}effect-inactive{{/unless}}">
+                                <strong>Still:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.wind 'gentle')}}effect-inactive{{/unless}}">
+                                <strong>Gentle:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.wind 'moderate')}}effect-inactive{{/unless}}">
+                                <strong>Moderate:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.wind 'strong')}}effect-inactive{{/unless}}">
+                                <strong>Strong:</strong> -1 SL to ranged attacks
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.wind 'very-strong')}}effect-inactive{{/unless}}">
+                                <strong>Very Strong:</strong> -2 SL to ranged attacks
                             </div>
                         </div>
-                        
-                        {{!-- Extreme Weather Warnings --}}
-                        {{#if weather.isBlizzard}}
-                        <div class="extreme-weather-warning blizzard-warning">
-                            <strong>⚠ BLIZZARD CONDITIONS</strong>
-                            <ul>
-                                <li>Movement speed reduced by 50%</li>
-                                <li>Must spend 1 JP per day to move (or gain +1 weariness if JP = 0)</li>
-                                <li>Visibility automatically set to Poor</li>
-                                <li>With gear: +1 exposure/day traveling</li>
-                                <li>Without gear: +3 exposure/day traveling</li>
-                                <li>Camping: No exposure gain/loss if camp setup, otherwise same as traveling</li>
-                            </ul>
-                        </div>
-                        {{else}}
-                        {{#if weather.isExtremeCold}}
-                        <div class="extreme-weather-warning extreme-cold-warning">
-                            <strong>⚠ EXTREME COLD CONDITIONS</strong>
-                            <ul>
-                                <li>With gear: +1 exposure/day traveling</li>
-                                <li>Without gear: +3 exposure/day traveling</li>
-                                <li>Camping: No exposure gain/loss if camp setup, otherwise same as traveling</li>
-                            </ul>
-                        </div>
-                        {{/if}}
-                        {{/if}}
                     </div>
                 </div>
                 
@@ -1485,10 +1497,23 @@
                             </select>
                         </div>
                         
+                        <div class="condition-item">
+                            <label>{{localize "TRAVEL.Weather.Terrain"}}</label>
+                            <select class="weather-condition-select" data-condition="terrain" {{#unless editable}}disabled{{/unless}}>
+                                <option value="woods" {{#if (eq weather.conditions.terrain "woods")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.woods"}}</option>
+                                <option value="hills" {{#if (eq weather.conditions.terrain "hills")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.hills"}}</option>
+                                <option value="forest" {{#if (eq weather.conditions.terrain "forest")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.forest"}}</option>
+                                <option value="plains" {{#if (eq weather.conditions.terrain "plains")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.plains"}}</option>
+                                <option value="wetlands" {{#if (eq weather.conditions.terrain "wetlands")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.wetlands"}}</option>
+                                <option value="mountains" {{#if (eq weather.conditions.terrain "mountains")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.mountains"}} (+1 temp, +2 wind)</option>
+                            </select>
+                        </div>
+                        
                         <div class="modifier-display">
                             <strong>Current Modifiers:</strong>
                             <div>Temperature: {{weather.modifiers.temperature}}</div>
                             <div>Precipitation: {{weather.modifiers.precipitation}}</div>
+                            <div>Wind: {{weather.modifiers.wind}}</div>
                         </div>
                         
                         {{#if editable}}
@@ -1496,36 +1521,40 @@
                             <i class="fas fa-dice"></i> {{localize "TRAVEL.Weather.GenerateWeather"}}
                         </button>
                         {{/if}}
+                        
+                        {{!-- Exposure & Gear Section --}}
+                        <div class="exposure-gear-section">
+                            <h4>{{localize "TRAVEL.Weather.ExposureAndGear"}}</h4>
+                            
+                            <div class="gear-checkboxes">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="weather-gear-checkbox" data-gear="weatherAppropriateGear" {{#if weather.gear.weatherAppropriateGear}}checked{{/if}} {{#unless editable}}disabled{{/unless}}>
+                                    {{localize "TRAVEL.Weather.WeatherAppropriateGear"}}
+                                </label>
+                                
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="weather-gear-checkbox" data-gear="campSetup" {{#if weather.gear.campSetup}}checked{{/if}} {{#unless editable}}disabled{{/unless}}>
+                                    {{localize "TRAVEL.Weather.CampSetup"}}
+                                </label>
+                            </div>
+                            
+                            <div class="exposure-display">
+                                <div class="exposure-line">
+                                    <strong>{{localize "TRAVEL.Weather.ExposureTraveling"}}:</strong> {{weather.exposure.traveling}}/day
+                                </div>
+                                <div class="exposure-line">
+                                    <strong>{{localize "TRAVEL.Weather.ExposureCamping"}}:</strong> {{weather.exposure.camping}}/day
+                                </div>
+                                {{#if weather.exposure.explanation}}
+                                <div class="exposure-explanation">
+                                    {{weather.exposure.explanation}}
+                                </div>
+                                {{/if}}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            {{!-- Bottom Section: Exposure & Gear --}}
-            <div class="weather-bottom-section">
-                <div class="weather-panel exposure-gear-panel">
-                    <h3>{{localize "TRAVEL.Weather.ExposureAndGear"}}</h3>
-                    
-                    <div class="gear-checkboxes">
-                        <label class="checkbox-label">
-                            <input type="checkbox" class="weather-gear-checkbox" data-gear="weatherAppropriateGear" {{#if weather.gear.weatherAppropriateGear}}checked{{/if}} {{#unless editable}}disabled{{/unless}}>
-                            {{localize "TRAVEL.Weather.WeatherAppropriateGear"}}
-                        </label>
-                        
-                        <label class="checkbox-label">
-                            <input type="checkbox" class="weather-gear-checkbox" data-gear="campSetup" {{#if weather.gear.campSetup}}checked{{/if}} {{#unless editable}}disabled{{/unless}}>
-                            {{localize "TRAVEL.Weather.CampSetup"}}
-                        </label>
-                    </div>
-                    
-                    <div class="exposure-display">
-                        <div class="exposure-line">
-                            <strong>{{localize "TRAVEL.Weather.ExposureTraveling"}}:</strong> {{weather.exposure.traveling}}/day
-                        </div>
-                        <div class="exposure-line">
-                            <strong>{{localize "TRAVEL.Weather.ExposureCamping"}}:</strong> {{weather.exposure.camping}}/day
-                        </div>
-                        {{#if weather.exposure.explanation}}
-                        <div class="exposure-explanation">
                             {{weather.exposure.explanation}}
                         </div>
                         {{/if}}
