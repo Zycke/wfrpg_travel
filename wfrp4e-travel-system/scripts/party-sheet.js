@@ -70,6 +70,37 @@ export class PartySheet extends ActorSheet {
         const travelFatigue = context.resources.travelFatigue || 0;
         context.resources.journeyPool.max = Math.max(0, baseJPMax - travelFatigue);
         
+        // Add camp tasks data with proper initialization
+        if (!partyFlags.camp) {
+            await this.actor.setFlag('wfrp4e-travel-system', 'camp', { tasks: {} });
+            partyFlags.camp = { tasks: {} };
+        }
+        context.camp = partyFlags.camp || { tasks: {} };
+        
+        // Ensure tasks object exists
+        if (!context.camp.tasks) {
+            context.camp.tasks = {};
+        }
+        
+        // Calculate watch statistics
+        context.watchCount = 0;
+        context.hasRecuperate1 = false;
+        context.hasRecuperate2Plus = false;
+        let recuperateCount = 0;
+        
+        for (const char of context.linkedCharacters) {
+            const task = context.camp.tasks[char.id];
+            if (task && task.keepingWatch) {
+                context.watchCount++;
+                if (task.selectedAction === 'recuperate') {
+                    recuperateCount++;
+                }
+            }
+        }
+        
+        context.hasRecuperate1 = (context.watchCount === 1 && recuperateCount === 1);
+        context.hasRecuperate2Plus = (context.watchCount >= 2 && recuperateCount >= 2);
+        
         // Add system and user info
         context.isGM = game.user.isGM;
         context.editable = this.isEditable;
@@ -149,6 +180,9 @@ export class PartySheet extends ActorSheet {
                 precipitation: 'none',
                 visibility: 'clear',
                 wind: 'still'
+            },
+            camp: {
+                tasks: {}
             }
         };
         
@@ -229,6 +263,12 @@ export class PartySheet extends ActorSheet {
         
         // Reset consumables button
         html.find('.reset-consumables-btn').click(this._onResetConsumables.bind(this));
+        
+        // Watch toggle
+        html.find('.watch-toggle').click(this._onWatchToggle.bind(this));
+        
+        // Task action select
+        html.find('.task-action-select').change(this._onTaskActionChange.bind(this));
     }
     
     /**
@@ -997,6 +1037,48 @@ export class PartySheet extends ActorSheet {
         const current = this.actor.getFlag('wfrp4e-travel-system', 'resources.provisions') || 0;
         await this.actor.setFlag('wfrp4e-travel-system', 'resources.provisions', Math.max(0, current + amount));
         this._updateCostDisplay();
+    }
+    
+    /**
+     * Handle watch toggle
+     */
+    async _onWatchToggle(event) {
+        event.preventDefault();
+        const characterId = event.currentTarget.dataset.characterId;
+        
+        let tasks = this.actor.getFlag('wfrp4e-travel-system', 'camp.tasks') || {};
+        
+        // Initialize task for this character if it doesn't exist
+        if (!tasks[characterId]) {
+            tasks[characterId] = { keepingWatch: false, selectedAction: null };
+        }
+        
+        // Toggle watch status
+        tasks[characterId].keepingWatch = !tasks[characterId].keepingWatch;
+        
+        await this.actor.setFlag('wfrp4e-travel-system', 'camp.tasks', tasks);
+        this.render(false);
+    }
+    
+    /**
+     * Handle task action selection change
+     */
+    async _onTaskActionChange(event) {
+        event.preventDefault();
+        const characterId = event.currentTarget.dataset.characterId;
+        const selectedAction = event.currentTarget.value;
+        
+        let tasks = this.actor.getFlag('wfrp4e-travel-system', 'camp.tasks') || {};
+        
+        // Initialize task for this character if it doesn't exist
+        if (!tasks[characterId]) {
+            tasks[characterId] = { keepingWatch: false, selectedAction: null };
+        }
+        
+        // Update selected action
+        tasks[characterId].selectedAction = selectedAction || null;
+        
+        await this.actor.setFlag('wfrp4e-travel-system', 'camp.tasks', tasks);
     }
     
     /**
