@@ -196,6 +196,26 @@
                                 {{/if}}
                             </div>
                         </div>
+
+                        {{!-- Days on the Road --}}
+                        <div class="progress-item">
+                            <label>Days on the Road</label>
+                            <div class="progress-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="journey.daysOnRoad">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">
+                                    {{journey.daysOnRoad}} {{localize "TRAVEL.Overview.Days"}}
+                                </span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="journey.daysOnRoad">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -279,11 +299,16 @@
                 <div class="party-members">
                     {{#if linkedCharacters}}
                         {{#each linkedCharacters}}
-                        <div class="character-item">
+                        <div class="character-item {{#if this.exposureWarning}}exposure-warning{{/if}}">
                             <img src="{{this.img}}" alt="{{this.name}}" title="{{this.name}}"/>
                             <div class="character-info">
                                 <span class="character-name">{{this.name}}</span>
                                 <span class="character-tb">TB: {{this.tb}}</span>
+                                {{#if this.exposureWarning}}
+                                <span class="exposure-warning-text">
+                                    <i class="fas fa-exclamation-triangle"></i> Taking {{this.exposureDamage}} wound{{#if (gt this.exposureDamage 1)}}s{{/if}}/day
+                                </span>
+                                {{/if}}
                             </div>
                             {{#if ../editable}}
                             <a class="remove-character" data-character-id="{{this.id}}" title="Remove from party">
@@ -363,6 +388,11 @@
                             {{/if}}
                         </div>
                         <small class="help-text">Hidden from players - roll when this reaches 0</small>
+                        {{#if (and editable isGM)}}
+                        <button type="button" class="gm-roll-button" data-action="roll-hexes">
+                            <i class="fas fa-dice-d10"></i> Roll Hexes Until Event
+                        </button>
+                        {{/if}}
                     </div>
                     {{/if}}
                 </div>
@@ -756,15 +786,6 @@
                             </div>
                         </div>
 
-                        <h2 style="margin-top: 15px;">Quick Reference</h2>
-                        <div class="resource-notes">
-                            <div class="note-item">
-                                <strong>Updated Maps:</strong> Re-roll navigation to prevent "Lost!" event
-                            </div>
-                            <div class="note-item">
-                                <strong>Meticulous Planning:</strong> +1 JP between events
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

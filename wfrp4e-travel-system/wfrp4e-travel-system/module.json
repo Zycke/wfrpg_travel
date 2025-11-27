@@ -39,7 +39,7 @@
     }
   ],
   "url": "https://github.com/Zycke/wfrpg_travel",
-  "manifest": "https://raw.githubusercontent.com/Zycke/wfrpg_travel/main/module.json",
+  "manifest": "https://raw.githubusercontent.com/Zycke/wfrpg_travel/refs/heads/main/wfrp4e-travel-system/module.json",
   "download": "https://github.com/Zycke/wfrpg_travel/archive/refs/heads/main.zip",
   "license": "",
   "readme": "https://raw.githubusercontent.com/Zycke/wfrpg_travel/main/README.md",

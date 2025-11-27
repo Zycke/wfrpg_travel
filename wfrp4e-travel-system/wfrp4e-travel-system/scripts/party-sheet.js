@@ -95,6 +95,7 @@ export class PartySheet extends ActorSheet {
                 journeyLength: 0,
                 dangerRating: 0,
                 hexesUntilEvent: 0,
+                daysOnRoad: 0,
                 factors: {
                     stealthy: false,
                     fastLight: false,
@@ -159,15 +160,24 @@ export class PartySheet extends ActorSheet {
      * Get full actor data for linked characters
      */
     _getLinkedCharacters(characterIds) {
+        const exposure = this.actor.getFlag('wfrp4e-travel-system', 'resources.exposure') || 0;
+        
         return characterIds
             .map(id => game.actors.get(id))
             .filter(actor => actor !== null)
-            .map(actor => ({
-                id: actor.id,
-                name: actor.name,
-                img: actor.img,
-                tb: actor.system.characteristics.t.bonus || 0
-            }));
+            .map(actor => {
+                const tb = actor.system.characteristics.t.bonus || 0;
+                const exposureDamage = Math.max(0, exposure - tb);
+                
+                return {
+                    id: actor.id,
+                    name: actor.name,
+                    img: actor.img,
+                    tb: tb,
+                    exposureWarning: exposureDamage > 0,
+                    exposureDamage: exposureDamage
+                };
+            });
     }
     
     /**
@@ -206,6 +216,9 @@ export class PartySheet extends ActorSheet {
         
         // Status toggle button
         html.find('[data-action="toggle-status"]').click(this._onStatusToggle.bind(this));
+        
+        // GM roll for hexes until event
+        html.find('[data-action="roll-hexes"]').click(this._onRollHexesUntilEvent.bind(this));
     }
     
     /**
@@ -494,7 +507,7 @@ export class PartySheet extends ActorSheet {
     async _onPhaseCycle(event) {
         event.preventDefault();
         
-        const phases = ['planning', 'preparation', 'travel'];
+        const phases = ['planning', 'preparation', 'travel', 'arrival'];
         const currentPhase = this.actor.getFlag('wfrp4e-travel-system', 'journey.currentPhase') || 'planning';
         const currentIndex = phases.indexOf(currentPhase);
         
@@ -525,5 +538,40 @@ export class PartySheet extends ActorSheet {
         
         await this.actor.setFlag('wfrp4e-travel-system', 'travel.status', newStatus);
         ui.notifications.info(`Status changed to: ${newStatus}`);
+    }
+    
+    /**
+     * Handle GM roll for hexes until event
+     * Formula: 1d10, halved (round up), modified by danger rating
+     */
+    async _onRollHexesUntilEvent(event) {
+        event.preventDefault();
+        
+        const dangerRating = this.actor.getFlag('wfrp4e-travel-system', 'journey.dangerRating') || 0;
+        
+        // Roll 1d10
+        const roll = await new Roll('1d10').evaluate({async: true});
+        
+        // Halve and round up
+        const halved = Math.ceil(roll.total / 2);
+        
+        // Modify by danger rating
+        const result = Math.max(1, halved + dangerRating);
+        
+        // Show the roll to GM only
+        await roll.toMessage({
+            speaker: {alias: `${this.actor.name} - Hexes Until Event`},
+            flavor: `<strong>Hexes Until Event Roll</strong><br>
+                     Base Roll: ${roll.total}<br>
+                     Halved (rounded up): ${halved}<br>
+                     Danger Rating Modifier: ${dangerRating >= 0 ? '+' : ''}${dangerRating}<br>
+                     <strong>Final Result: ${result} hexes</strong>`,
+            whisper: [game.user.id]
+        });
+        
+        // Update the hexes until event
+        await this.actor.setFlag('wfrp4e-travel-system', 'journey.hexesUntilEvent', result);
+        
+        ui.notifications.info(`Hexes until event set to ${result} (GM only)`);
     }
 }
