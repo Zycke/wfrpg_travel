@@ -977,7 +977,7 @@
                     <div class="tasks-list">
                         {{#each linkedCharacters}}
                         <div class="task-row" data-character-id="{{this.id}}">
-                            <span class="character-name">{{this.name}}</span>
+                            <span class="character-name" title="{{this.name}}">{{this.firstName}}</span>
                             <button type="button" class="watch-toggle {{#if this.taskData.keepingWatch}}active{{/if}}" 
                                     data-character-id="{{this.id}}"
                                     title="Toggle Keeping Watch">
@@ -1007,9 +1007,15 @@
                         <div class="watch-list">
                             {{#each watchingCharacters}}
                             <div class="watch-member">
-                                <i class="fas fa-eye"></i> {{this.name}}
+                                <span class="character-name-watch"><i class="fas fa-eye"></i> {{this.name}}</span>
+                                <span class="fatigue-test">{{this.fatigueTest}}</span>
                             </div>
                             {{/each}}
+                            {{#if showWatchDanger}}
+                            <div class="watch-warning">
+                                <i class="fas fa-exclamation-triangle"></i> <strong>Insufficient Watch. Increased Danger.</strong>
+                            </div>
+                            {{/if}}
                         </div>
                         <div class="watch-requirements">
                             {{#if showWatchSuccess}}

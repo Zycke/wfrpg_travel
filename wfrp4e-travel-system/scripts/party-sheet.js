@@ -60,7 +60,7 @@ export class PartySheet extends ActorSheet {
         if (context.linkedCharacters.length > 0) {
             context.resources.wearinessThreshold = this._calculateWearinessThreshold(context.linkedCharacters);
             // Add +2 to threshold if party has mounts
-            if (context.travel.options?.hasMounts) {
+            if (context.travel.hasMounts) {
                 context.resources.wearinessThreshold += 2;
             }
         }
@@ -89,6 +89,9 @@ export class PartySheet extends ActorSheet {
                 keepingWatch: task.keepingWatch || false,
                 selectedAction: task.selectedAction || null
             };
+            // Extract first name only for Tasks panel
+            char.firstName = char.name.split(' ')[0];
+        }
         }
         
         // Calculate watch statistics
@@ -106,6 +109,20 @@ export class PartySheet extends ActorSheet {
                 if (task.selectedAction === 'recuperate') {
                     recuperateCount++;
                 }
+            }
+        }
+        
+        // Add fatigue test text to each watching character
+        for (const char of watchingCharacters) {
+            const task = context.camp.tasks[char.id];
+            if (task && task.selectedAction === 'recuperate') {
+                char.fatigueTest = 'No Fatigue Gained';
+            } else if (context.watchCount >= 3) {
+                char.fatigueTest = 'Average Endurance Test';
+            } else if (context.watchCount === 2) {
+                char.fatigueTest = 'Challenging Endurance Test';
+            } else if (context.watchCount === 1) {
+                char.fatigueTest = '+1 Fatigue';
             }
         }
         

@@ -1129,9 +1129,13 @@
 }
 
 .party-sheet .task-row .character-name {
-    flex: 0 0 120px;
+    flex: 0 0 90px;
     font-weight: bold;
     color: #333;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .party-sheet .watch-toggle {
@@ -1145,6 +1149,10 @@
     color: #666;
     transition: all 0.2s;
     flex: 0 0 70px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .party-sheet .watch-toggle:hover {
@@ -1172,6 +1180,7 @@
     border-radius: 4px;
     font-size: 12px;
     background: white;
+    height: 28px;
 }
 
 /* Watch Panel */
@@ -1193,12 +1202,40 @@
     padding: 6px 10px;
     border-radius: 4px;
     border: 1px solid #5e35b1;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.party-sheet .watch-member .fatigue-test {
+    color: #666;
+    font-size: 11px;
+    font-weight: normal;
+    font-style: italic;
+}
+
+.party-sheet .watch-member .character-name-watch {
     color: #5e35b1;
     font-weight: bold;
-    font-size: 13px;
 }
 
 .party-sheet .watch-member i {
+    margin-right: 4px;
+}
+
+.party-sheet .watch-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 4px;
+}
+
+.party-sheet .watch-warning i {
     margin-right: 6px;
 }
 
