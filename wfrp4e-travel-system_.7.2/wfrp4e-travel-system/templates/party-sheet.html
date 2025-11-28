@@ -1,0 +1,1715 @@
+<form class="{{cssClass}} flexcol" autocomplete="off">
+    
+    {{!-- Sheet Header --}}
+    <header class="sheet-header">
+        <img class="profile-img" src="{{actor.img}}" data-edit="img" title="{{actor.name}}" height="100" width="100"/>
+        <div class="header-fields">
+            <h1 class="charname">
+                <input name="name" type="text" value="{{actor.name}}" placeholder="Party Name"/>
+            </h1>
+            <div class="phase-status-row">
+                <div class="current-phase">
+                    <label>{{localize "TRAVEL.Overview.CurrentPhase"}}:</label>
+                    <button type="button" class="phase-badge phase-{{journey.currentPhase}}" data-action="cycle-phase" title="Left-click: Next Phase | Right-click: Previous Phase">
+                        {{localize (concat "TRAVEL.Phases." journey.currentPhase)}}
+                    </button>
+                </div>
+                <div class="current-status">
+                    <label>Status:</label>
+                    <button type="button" class="status-badge status-{{travel.status}}" data-action="toggle-status" title="Click to toggle between Traveling and Camping">
+                        {{#if (eq travel.status "traveling")}}Traveling{{else}}Camping{{/if}}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    {{!-- Sheet Navigation --}}
+    <nav class="sheet-tabs tabs" data-group="primary">
+        <a class="item" data-tab="overview">{{localize "TRAVEL.Tabs.Overview"}}</a>
+        <a class="item" data-tab="journey">{{localize "TRAVEL.Tabs.Journey"}}</a>
+        <a class="item" data-tab="resources">{{localize "TRAVEL.Tabs.Resources"}}</a>
+        <a class="item" data-tab="travel-actions">{{localize "TRAVEL.Tabs.TravelActions"}}</a>
+        <a class="item" data-tab="camp-actions">{{localize "TRAVEL.Tabs.CampActions"}}</a>
+        <a class="item" data-tab="weather">{{localize "TRAVEL.Tabs.Weather"}}</a>
+        <a class="item" data-tab="events">Events</a>
+    </nav>
+
+    {{!-- Sheet Body --}}
+    <section class="sheet-body">
+        
+        {{!-- Overview Tab --}}
+        <div class="tab overview" data-group="primary" data-tab="overview">
+            
+            {{!-- Critical Status and Journey Progress in a row --}}
+            <div class="section-row">
+                {{!-- Critical Status Section --}}
+                <div class="party-section">
+                    <h2>{{localize "TRAVEL.Overview.CriticalStatus"}}</h2>
+                    <div class="status-grid">
+                        
+                        {{!-- Weariness --}}
+                        <div class="status-item {{#if (gte resources.weariness resources.wearinessThreshold)}}warning{{/if}}">
+                            <label>{{localize "TRAVEL.Overview.Weariness"}}</label>
+                            <div class="status-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.weariness">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">
+                                    {{resources.weariness}} / {{resources.wearinessThreshold}}
+                                </span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.weariness">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
+
+                        {{!-- Travel Fatigue --}}
+                        <div class="status-item {{#if (gt resources.travelFatigue 0)}}warning{{/if}}">
+                            <label>{{localize "TRAVEL.Overview.TravelFatigue"}}</label>
+                            <div class="status-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.travelFatigue">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">{{resources.travelFatigue}}</span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.travelFatigue">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                            {{#if (gt resources.travelFatigue 0)}}
+                            <div class="status-effects">
+                                <small>
+                                    -{{resources.travelFatigue}} SL to Endurance | 
+                                    -{{resources.travelFatigue}} wounds healed | 
+                                    -{{resources.travelFatigue}} JP max
+                                </small>
+                            </div>
+                            {{/if}}
+                        </div>
+
+                        {{!-- Hunger --}}
+                        <div class="status-item {{#if (gt resources.hunger 0)}}warning{{/if}}">
+                            <label>{{localize "TRAVEL.Overview.Hunger"}}</label>
+                            <div class="status-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.hunger">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">{{resources.hunger}}</span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.hunger">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
+
+                        {{!-- Exposure --}}
+                        <div class="status-item {{#if (gt resources.exposure 0)}}warning{{/if}}">
+                            <label>{{localize "TRAVEL.Overview.Exposure"}}</label>
+                            <div class="status-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.exposure">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">
+                                    {{resources.exposure}}
+                                    {{#if (gt weather.exposure.daily 0)}}
+                                    <span class="weather-warning">(+{{weather.exposure.daily}}/day)</span>
+                                    {{else}}
+                                    <span class="exposure-none">(+0/day)</span>
+                                    {{/if}}
+                                </span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.exposure">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{!-- Journey Progress Section --}}
+                <div class="party-section">
+                    <h2>{{localize "TRAVEL.Overview.JourneyProgress"}}</h2>
+                    <div class="progress-grid">
+                        
+                        {{!-- Journey Pool --}}
+                        <div class="progress-item">
+                            <label>
+                                {{localize "TRAVEL.Overview.JourneyPool"}}
+                                {{#if weather.blizzardTraveling}}
+                                <span class="warning-inline">⚠ (Blizzard: -1 JP/day)</span>
+                                {{/if}}
+                            </label>
+                            <div class="progress-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.journeyPool.current">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">
+                                    {{resources.journeyPool.current}} / {{resources.journeyPool.max}}
+                                </span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.journeyPool.current">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
+
+                        {{!-- Provisions --}}
+                        <div class="progress-item">
+                            <label>
+                                {{localize "TRAVEL.Overview.Provisions"}}
+                                {{#if weather.extremeTempProvisions}}
+                                <span class="warning-inline">⚠ (2x usage)</span>
+                                {{/if}}
+                            </label>
+                            <div class="progress-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.provisions">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">
+                                    {{resources.provisions}} {{localize "TRAVEL.Overview.Days"}}
+                                </span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.provisions">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
+
+                        {{!-- Days on the Road --}}
+                        <div class="progress-item">
+                            <label>Days on the Road</label>
+                            <div class="progress-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="journey.daysOnRoad">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">
+                                    {{journey.daysOnRoad}} {{localize "TRAVEL.Overview.Days"}}
+                                </span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="journey.daysOnRoad">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
+
+                        {{!-- Mount Provisions --}}
+                        <div class="progress-item">
+                            <label>Mount Provisions</label>
+                            <div class="progress-value">
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.mountProvisions">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display">
+                                    {{resources.mountProvisions}} {{localize "TRAVEL.Overview.Days"}}
+                                </span>
+                                {{#if editable}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.mountProvisions">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Weather Summary and Travel Mode in a row --}}
+            <div class="section-row">
+                {{!-- Weather Summary Section --}}
+                <div class="party-section">
+                    <h2>{{localize "TRAVEL.Overview.WeatherSummary"}}</h2>
+                    <div class="weather-summary">
+                        <div class="weather-item">
+                            <i class="fas fa-temperature-high"></i>
+                            <span class="weather-label">{{localize "TRAVEL.Overview.Temperature"}}:</span>
+                            <span class="weather-value temperature-{{weather.current.temperature}}">
+                                {{localize (concat "TRAVEL.Weather.Temperature." weather.current.temperature)}}
+                            </span>
+                        </div>
+                        <div class="weather-item">
+                            <i class="fas fa-cloud-rain"></i>
+                            <span class="weather-label">{{localize "TRAVEL.Overview.Precipitation"}}:</span>
+                            <span class="weather-value">
+                                {{localize (concat "TRAVEL.Weather.Precipitation." weather.current.precipitation)}}
+                            </span>
+                        </div>
+                        <div class="weather-item">
+                            <i class="fas fa-eye"></i>
+                            <span class="weather-label">Visibility:</span>
+                            <span class="weather-value">
+                                {{localize (concat "TRAVEL.Weather.Visibility." weather.current.visibility)}}
+                            </span>
+                        </div>
+                        <div class="weather-item">
+                            <i class="fas fa-wind"></i>
+                            <span class="weather-label">Wind:</span>
+                            <span class="weather-value">
+                                {{localize (concat "TRAVEL.Weather.Wind." weather.current.wind)}}
+                            </span>
+                        </div>
+                        
+                        {{!-- Active Weather Effects --}}
+                        {{#if weather.activeEffects}}
+                        <div class="active-effects">
+                            <strong>Active Effects:</strong>
+                            <ul class="effects-list">
+                                {{#each weather.activeEffects}}
+                                <li>{{this}}</li>
+                                {{/each}}
+                            </ul>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Travel Mode Section --}}
+                <div class="party-section">
+                    <h2>{{localize "TRAVEL.Overview.TravelMode"}}</h2>
+                    <div class="travel-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="travel-option-toggle" data-option="forcedMarch" {{checked travel.forcedMarch}} {{disabled (not editable)}}/>
+                            <span>{{localize "TRAVEL.TravelOptions.ForcedMarch"}}</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="travel-option-toggle" data-option="extraRations" {{checked travel.extraRations}} {{disabled (not editable)}}/>
+                            <span>{{localize "TRAVEL.TravelOptions.ExtraRations"}}</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="travel-option-toggle" data-option="halfRations" {{checked travel.halfRations}} {{disabled (not editable)}}/>
+                            <span>{{localize "TRAVEL.TravelOptions.HalfRations"}}</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="travel-option-toggle" data-option="hasMounts" {{checked travel.hasMounts}} {{disabled (not editable)}}/>
+                            <span>{{localize "TRAVEL.TravelOptions.Mounts"}}</span>
+                        </label>
+                        {{#if travel.hasMounts}}
+                        <label class="checkbox-label indent">
+                            <input type="checkbox" class="travel-option-toggle" data-option="mountsGrazing" {{checked travel.mountsGrazing}} {{disabled (not editable)}}/>
+                            <span>{{localize "TRAVEL.TravelOptions.MountsGrazing"}}</span>
+                        </label>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Party Members Section - Now at the bottom --}}
+            <div class="party-section">
+                <h2>{{localize "TRAVEL.Overview.PartyMembers"}}</h2>
+                <div class="party-members">
+                    {{#if linkedCharacters}}
+                        {{#each linkedCharacters}}
+                        <div class="character-item {{#if this.exposureWarning}}exposure-warning{{/if}}">
+                            <img src="{{this.img}}" alt="{{this.name}}" title="{{this.name}}"/>
+                            <div class="character-info">
+                                <span class="character-name">{{this.name}}</span>
+                                <div class="character-stats">
+                                    <span class="character-wounds">W: {{this.currentWounds}}/{{this.maxWounds}}</span>
+                                    <span class="character-tb">TB: {{this.tb}}</span>
+                                    {{#if this.exposureWarning}}
+                                    <span class="exposure-warning-text">
+                                        <i class="fas fa-exclamation-triangle"></i> {{this.exposureDamage}} wound{{#if (gt this.exposureDamage 1)}}s{{/if}}/day
+                                    </span>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            {{#if ../editable}}
+                            <a class="remove-character" data-character-id="{{this.id}}" title="Remove from party">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            {{/if}}
+                        </div>
+                        {{/each}}
+                    {{else}}
+                        <div class="empty-party">
+                            <p>{{localize "TRAVEL.Overview.AddCharacter"}}</p>
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    {{/if}}
+                </div>
+            </div>
+
+        </div>
+
+        {{!-- Journey Tab --}}
+        <div class="tab journey" data-group="primary" data-tab="journey">
+            
+            {{!-- Journey Planning Section --}}
+            <div class="party-section">
+                <h2>Journey Planning</h2>
+                <div class="journey-planning">
+                    <div class="planning-item">
+                        <label>Journey Length (Total JD)</label>
+                        <div class="planning-value">
+                            {{#if editable}}
+                            <button type="button" class="resource-control" data-action="decrease" data-resource="journey.journeyLength">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            {{/if}}
+                            <span class="value-display">{{journey.journeyLength}}</span>
+                            {{#if editable}}
+                            <button type="button" class="resource-control" data-action="increase" data-resource="journey.journeyLength">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            {{/if}}
+                        </div>
+                        <small class="help-text">Sum of all hex difficulties in the segment</small>
+                    </div>
+                    
+                    <div class="planning-item">
+                        <label>Danger Rating</label>
+                        <div class="planning-value">
+                            {{#if (and editable isGM)}}
+                            <button type="button" class="resource-control" data-action="decrease" data-resource="journey.dangerRating">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            {{/if}}
+                            <span class="value-display danger-rating-display">{{journey.dangerRating}}</span>
+                            {{#if (and editable isGM)}}
+                            <button type="button" class="resource-control" data-action="increase" data-resource="journey.dangerRating">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            {{/if}}
+                        </div>
+                        <small class="help-text">Based on terrain, climate, and threats (auto-calculated)</small>
+                    </div>
+                    
+                    {{#if isGM}}
+                    <div class="planning-item gm-only">
+                        <label>Hexes Until Event <span class="gm-badge">GM Only</span></label>
+                        <div class="planning-value">
+                            {{#if editable}}
+                            <button type="button" class="resource-control" data-action="decrease" data-resource="journey.hexesUntilEvent">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            {{/if}}
+                            <span class="value-display">{{journey.hexesUntilEvent}}</span>
+                            {{#if editable}}
+                            <button type="button" class="resource-control" data-action="increase" data-resource="journey.hexesUntilEvent">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            {{/if}}
+                        </div>
+                        <small class="help-text">Hidden from players - roll when this reaches 0</small>
+                        {{#if (and editable isGM)}}
+                        <button type="button" class="gm-roll-button" data-action="roll-hexes">
+                            <i class="fas fa-dice-d10"></i> Roll Hexes Until Event
+                        </button>
+                        {{/if}}
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+
+            {{!-- Danger Rating Calculator --}}
+            <div class="section-row">
+                <div class="party-section">
+                    <h2>Danger Rating Factors</h2>
+                    <div class="danger-factors">
+                        <div class="factor-group">
+                            <h3>Negative Modifiers</h3>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="-1" data-factor="stealthy" {{checked journey.factors.stealthy}} {{disabled (not editable)}}/>
+                                <span>Stealthy (No animals) <span class="modifier">-1</span></span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="-1" data-factor="fastLight" {{checked journey.factors.fastLight}} {{disabled (not editable)}}/>
+                                <span>Fast & Light (No cart) <span class="modifier">-1</span></span>
+                            </label>
+                        </div>
+                        
+                        <div class="factor-group">
+                            <h3>+1 Modifiers</h3>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="1" data-factor="undeveloped" {{checked journey.factors.undeveloped}} {{disabled (not editable)}}/>
+                                <span>Undeveloped Land <span class="modifier">+1</span></span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="1" data-factor="difficultTerrain" {{checked journey.factors.difficultTerrain}} {{disabled (not editable)}}/>
+                                <span>Difficult Terrain <span class="modifier">+1</span></span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="1" data-factor="minimalAuthority" {{checked journey.factors.minimalAuthority}} {{disabled (not editable)}}/>
+                                <span>Minimal Authority <span class="modifier">+1</span></span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="1" data-factor="challengingClimate" {{checked journey.factors.challengingClimate}} {{disabled (not editable)}}/>
+                                <span>Challenging Climate <span class="modifier">+1</span></span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="1" data-factor="hostileCreatures" {{checked journey.factors.hostileCreatures}} {{disabled (not editable)}}/>
+                                <span>Hostile Creatures <span class="modifier">+1</span></span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="1" data-factor="localBanditry" {{checked journey.factors.localBanditry}} {{disabled (not editable)}}/>
+                                <span>Local Banditry <span class="modifier">+1</span></span>
+                            </label>
+                        </div>
+                        
+                        <div class="factor-group">
+                            <h3>+2 Modifiers</h3>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="2" data-factor="hazardousTerrain" {{checked journey.factors.hazardousTerrain}} {{disabled (not editable)}}/>
+                                <span>Hazardous Terrain <span class="modifier">+2</span></span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="2" data-factor="warRavaged" {{checked journey.factors.warRavaged}} {{disabled (not editable)}}/>
+                                <span>War Ravaged <span class="modifier">+2</span></span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="2" data-factor="abundantEnemies" {{checked journey.factors.abundantEnemies}} {{disabled (not editable)}}/>
+                                <span>Abundant Enemies <span class="modifier">+2</span></span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" class="danger-factor" data-modifier="2" data-factor="deadlyClimate" {{checked journey.factors.deadlyClimate}} {{disabled (not editable)}}/>
+                                <span>Deadly Climate <span class="modifier">+2</span></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="party-section">
+                    <h2>Journey Difficulty Reference</h2>
+                    <div class="reference-table">
+                        <h3>Base Terrain Difficulty</h3>
+                        <div class="reference-row">
+                            <span class="ref-label">Open, flat terrain:</span>
+                            <span class="ref-value">1 JD</span>
+                        </div>
+                        <div class="reference-row">
+                            <span class="ref-label">Challenging (Forest, Hills, Swamp):</span>
+                            <span class="ref-value">2 JD</span>
+                        </div>
+                        <div class="reference-row">
+                            <span class="ref-label">Extreme (Mountains, Dunes, Jungle):</span>
+                            <span class="ref-value">3 JD</span>
+                        </div>
+                        
+                        <h3>Modifiers per Hex</h3>
+                        <div class="reference-row">
+                            <span class="ref-label">Winter:</span>
+                            <span class="ref-value">+1 JD</span>
+                        </div>
+                        <div class="reference-row">
+                            <span class="ref-label">Maintained Road:</span>
+                            <span class="ref-value">-1 JD (min 1)</span>
+                        </div>
+                        
+                        <h3>Journey Pool Maximum</h3>
+                        <div class="reference-row">
+                            <span class="ref-label">Base Max:</span>
+                            <span class="ref-value">10 JP</span>
+                        </div>
+                        <div class="reference-row">
+                            <span class="ref-label">Per Travel Fatigue:</span>
+                            <span class="ref-value">-1 JP max</span>
+                        </div>
+                        <div class="reference-row">
+                            <span class="ref-label">Current Max:</span>
+                            <span class="ref-value calculated">{{resources.journeyPool.max}} JP</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {{!-- Resources Tab --}}
+        <div class="tab resources" data-group="primary" data-tab="resources">
+            
+            {{!-- Top row: Preparedness Pool and Cost Summary --}}
+            <div class="section-row">
+                <div class="party-section">
+                    <h2>Preparedness Pool</h2>
+                    <div class="preparedness-info">
+                        <p>Before beginning a journey, the party generates Preparedness Points through skill checks. Points are spent on consumables, with leftovers forming the initial Journey Pool.</p>
+                        <div class="progress-item">
+                            <label>Preparedness Points</label>
+                            <div class="progress-value">
+                                {{#if (and editable isGM)}}
+                                <button type="button" class="resource-control" data-action="decrease" data-resource="resources.preparednessPool">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                {{/if}}
+                                <span class="value-display preparedness-display {{#if (lt resources.preparednessPool 0)}}negative{{/if}}">{{resources.preparednessPool}}</span>
+                                {{#if (and editable isGM)}}
+                                <button type="button" class="resource-control" data-action="increase" data-resource="resources.preparednessPool">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                {{/if}}
+                            </div>
+                        </div>
+                        {{#if editable}}
+                        <button type="button" class="reset-consumables-btn" title="Reset all consumables to 0">
+                            <i class="fas fa-redo"></i> Reset All Consumables
+                        </button>
+                        {{/if}}
+                    </div>
+                </div>
+                
+                <div class="party-section">
+                    <h2>Total Cost</h2>
+                    <div class="cost-summary">
+                        <div class="cost-breakdown">
+                            <div class="cost-item">
+                                <span class="cost-label">Provisions:</span>
+                                <span class="cost-value" data-cost-type="provisions">0 ss</span>
+                            </div>
+                            <div class="cost-item">
+                                <span class="cost-label">Mount Provisions:</span>
+                                <span class="cost-value" data-cost-type="mountProvisions">0 bp</span>
+                            </div>
+                            <div class="cost-item">
+                                <span class="cost-label">Consumables:</span>
+                                <span class="cost-value" data-cost-type="consumables">0 ss</span>
+                            </div>
+                            <div class="cost-item">
+                                <span class="cost-label">Special Items:</span>
+                                <span class="cost-value" data-cost-type="specialItems">0 ss</span>
+                            </div>
+                        </div>
+                        <div class="cost-total">
+                            <span class="cost-label">Grand Total:</span>
+                            <span class="cost-value total" data-cost-type="total">0 ss 0 bp</span>
+                        </div>
+                        <small class="currency-note">12 bp = 1 ss | 20 ss = 1 gc</small>
+                    </div>
+                </div>
+            </div>
+
+            {{!-- Consumables --}}
+            <div class="section-row">
+                <div class="party-section">
+                    <h2>Basic Consumables</h2>
+                    <div class="consumables-list">
+                        <div class="consumable-item">
+                            <div class="consumable-header">
+                                <label>Camp Supplies</label>
+                                <div class="consumable-controls">
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.consumables.campSupplies" data-cost="1" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    {{/if}}
+                                    <span class="consumable-count">{{resources.consumables.campSupplies}}</span>
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.consumables.campSupplies" data-cost="1" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <small>Firewood, kindling, flint & steel. Cost: 1 ss</small>
+                        </div>
+
+                        <div class="consumable-item">
+                            <div class="consumable-header">
+                                <label>Spirits</label>
+                                <div class="consumable-controls">
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.consumables.spirits" data-cost="1" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    {{/if}}
+                                    <span class="consumable-count">{{resources.consumables.spirits}}</span>
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.consumables.spirits" data-cost="1" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <small>Consume Alcohol test. Reduce weariness by 1 on success. Cost: 1 ss</small>
+                        </div>
+
+                        <div class="consumable-item">
+                            <div class="consumable-header">
+                                <label>Preservatives</label>
+                                <div class="consumable-controls">
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.consumables.preservatives" data-cost="5" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    {{/if}}
+                                    <span class="consumable-count">{{resources.consumables.preservatives}}</span>
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.consumables.preservatives" data-cost="5" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <small>Re-roll a spoilage roll (take better result). Cost: 5 ss</small>
+                        </div>
+
+                        <div class="consumable-item">
+                            <div class="consumable-header">
+                                <label>Survival Tools</label>
+                                <div class="consumable-controls">
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.consumables.survivalTools" data-cost="4" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    {{/if}}
+                                    <span class="consumable-count">{{resources.consumables.survivalTools}}</span>
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.consumables.survivalTools" data-cost="4" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <small>Add +1 SL to skill checks while camping. Cost: 4 ss</small>
+                        </div>
+
+                        <div class="consumable-item">
+                            <div class="consumable-header">
+                                <label>Medicinal Herbs</label>
+                                <div class="consumable-controls">
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.consumables.medicinalHerbs" data-cost="3" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    {{/if}}
+                                    <span class="consumable-count">{{resources.consumables.medicinalHerbs}}</span>
+                                    {{#if editable}}
+                                    <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.consumables.medicinalHerbs" data-cost="3" data-currency="silver" data-pp-cost="1">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <small>Re-roll against disease during "Sickness!" event. Cost: 3 ss</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="provisions-special-column">
+                    <div class="party-section">
+                        <h2>Provisions</h2>
+                        <div class="consumables-list">
+                            <div class="consumable-item">
+                                <div class="consumable-header">
+                                    <label>Provisions (1 day/party)</label>
+                                    <div class="consumable-controls">
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.provisions" data-cost="party" data-currency="silver" data-pp-cost="1">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        {{/if}}
+                                        <span class="consumable-count">{{resources.provisions}}</span>
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.provisions" data-cost="party" data-currency="silver" data-pp-cost="1">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                                <small>Food & water. Cost: 1 ss per party member per day</small>
+                            </div>
+
+                            <div class="consumable-item">
+                                <div class="consumable-header">
+                                    <label>Mount Provisions (1 day)</label>
+                                    <div class="consumable-controls">
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.mountProvisions" data-cost="6" data-currency="brass" data-pp-cost="1">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        {{/if}}
+                                        <span class="consumable-count">{{resources.mountProvisions}}</span>
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.mountProvisions" data-cost="6" data-currency="brass" data-pp-cost="1">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                                <small>Feed for mounts. Cost: 6 bp per mount per day. Not needed if grazing.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="party-section">
+                        <h2>Special Items</h2>
+                        <div class="consumables-list">
+                            <div class="consumable-item">
+                                <div class="consumable-header">
+                                    <label>Specialized Equipment</label>
+                                    <div class="consumable-controls">
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.consumables.specializedEquipment" data-cost="10" data-currency="silver" data-pp-cost="2">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        {{/if}}
+                                        <span class="consumable-count">{{resources.consumables.specializedEquipment}}</span>
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.consumables.specializedEquipment" data-cost="10" data-currency="silver" data-pp-cost="2">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                                <small>Add +2 SL to event-related skill checks. Cost: 10 ss</small>
+                            </div>
+
+                            <div class="consumable-item">
+                                <div class="consumable-header">
+                                    <label>Updated Maps</label>
+                                    <div class="consumable-controls">
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.consumables.updatedMaps" data-cost="0" data-currency="pp" data-pp-cost="2">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        {{/if}}
+                                        <span class="consumable-count">{{resources.consumables.updatedMaps}}</span>
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.consumables.updatedMaps" data-cost="0" data-currency="pp" data-pp-cost="2">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                                <small>Re-roll navigation rolls to prevent "Lost!" event. Cost: 2 PP</small>
+                            </div>
+
+                            <div class="consumable-item">
+                                <div class="consumable-header">
+                                    <label>Meticulous Planning</label>
+                                    <div class="consumable-controls">
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="decrease" data-resource="resources.consumables.meticulousPlanning" data-cost="0" data-currency="pp-special" data-pp-cost="5">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                        {{/if}}
+                                        <span class="consumable-count">{{#if resources.consumables.meticulousPlanning}}1{{else}}0{{/if}}</span>
+                                        {{#if editable}}
+                                        <button type="button" class="resource-control consumable-btn" data-action="increase" data-resource="resources.consumables.meticulousPlanning" data-cost="0" data-currency="pp-special" data-pp-cost="5">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        {{/if}}
+                                    </div>
+                                </div>
+                                <small>+1 JP between events. Cost: 5 PP</small>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {{!-- Travel Actions Tab --}}
+        <div class="tab travel-actions" data-group="primary" data-tab="travel-actions">
+            
+            <div class="actions-header">
+                <h2>Traveling</h2>
+                <p class="help-text">Each action costs 1 JP or increases weariness by 1. No character may take more than one travel action per hex.</p>
+                {{#unless (eq travel.status "traveling")}}
+                <div class="status-warning">
+                    <i class="fas fa-exclamation-circle"></i> Status must be set to "Traveling" to use these actions
+                </div>
+                {{/unless}}
+            </div>
+
+            <div class="actions-grid">
+                {{!-- Pathfinding --}}
+                <div class="action-card {{#unless (eq travel.status "traveling")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-compass"></i> Pathfinding</h3>
+                        <span class="action-cost">1 JP or +1 Weariness</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Navigation (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> -1 weariness (early arrival)<br>
+                            <strong>Critical:</strong> Can take camp actions today<br>
+                            <strong>Failure:</strong> +1 weariness<br>
+                            <strong>Critical Fail:</strong> Lost! No progress, +2 weariness
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="pathfinding">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="pathfinding" {{#unless (eq travel.status "traveling")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Forage --}}
+                <div class="action-card {{#unless (eq travel.status "traveling")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-leaf"></i> Forage</h3>
+                        <span class="action-cost">1 JP or +1 Weariness</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Outdoor Survival or Lore (Herbs) (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +1 provisions (+1 per 3 SL)<br>
+                            <strong>Critical:</strong> +1 additional provision<br>
+                            <strong>Failure:</strong> Nothing found<br>
+                            <strong>Critical Fail:</strong> Poisoned! 1d10 damage
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="forage">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="forage" {{#unless (eq travel.status "traveling")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Scout Ahead --}}
+                <div class="action-card {{#unless (eq travel.status "traveling")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-binoculars"></i> Scout Ahead</h3>
+                        <span class="action-cost">1 JP or +1 Weariness</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Perception (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> GM reveals hexes until event & next hex<br>
+                            <strong>Critical:</strong> GM reveals event, may spend 1 JP to re-roll<br>
+                            <strong>Failure:</strong> Nothing found
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="scout">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="scout" {{#unless (eq travel.status "traveling")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Contingency Planning --}}
+                <div class="action-card {{#unless (eq travel.status "traveling")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-clipboard-list"></i> Contingency Planning</h3>
+                        <span class="action-cost">1 JP or +1 Weariness</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Leadership (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +1 to next event roll<br>
+                            <strong>Critical:</strong> +2 to next event roll<br>
+                            <strong>Failure:</strong> No effect
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="contingency">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="contingency" {{#unless (eq travel.status "traveling")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Assist --}}
+                <div class="action-card {{#unless (eq travel.status "traveling")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-hands-helping"></i> Assist</h3>
+                        <span class="action-cost">1 JP or +1 Weariness</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Varies (must have 0+ ranks)</div>
+                        <div class="action-description">
+                            <strong>Choose one:</strong><br>
+                            • Assisted player adds +10 to their check<br>
+                            • Make Average (+0) check, add half SL (round down) to assisted check
+                        </div>
+                        <p class="help-text">Use standard WFRP4e assist mechanics - not automated</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {{!-- Camp Actions Tab --}}
+        <div class="tab camp-actions" data-group="primary" data-tab="camp-actions">
+            
+            <div class="actions-header">
+                <h2>Camping</h2>
+                <p class="help-text">Camping automatically adds 2 JP per day. Camp actions are free (no JP or weariness cost).</p>
+                {{#unless (eq travel.status "camping")}}
+                <div class="status-warning">
+                    <i class="fas fa-exclamation-circle"></i> Status must be set to "Camping" to use these actions
+                </div>
+                {{/unless}}
+            </div>
+
+            {{!-- Tasks and Watch Panels --}}
+            {{#if linkedCharacters}}
+            <div class="camp-management-panels">
+                {{!-- Tasks Panel --}}
+                <div class="tasks-panel">
+                    <h3>Tasks</h3>
+                    <div class="tasks-list">
+                        {{#each linkedCharacters}}
+                        <div class="task-row" data-character-id="{{this.id}}">
+                            <span class="character-name" title="{{this.name}}">{{this.firstName}}</span>
+                            <button type="button" class="watch-toggle {{#if this.taskData.keepingWatch}}active{{/if}}" 
+                                    data-character-id="{{this.id}}"
+                                    title="Toggle Keeping Watch">
+                                <i class="fas fa-eye"></i> Watch
+                            </button>
+                            <select class="task-action-select" data-character-id="{{this.id}}">
+                                <option value="">Select action...</option>
+                                <option value="setup-camp" {{#if (eq this.taskData.selectedAction 'setup-camp')}}selected{{/if}}>Setup Camp</option>
+                                <option value="cook" {{#if (eq this.taskData.selectedAction 'cook')}}selected{{/if}}>Cook</option>
+                                <option value="hunt" {{#if (eq this.taskData.selectedAction 'hunt')}}selected{{/if}}>Hunt or Fish</option>
+                                <option value="raise-spirits" {{#if (eq this.taskData.selectedAction 'raise-spirits')}}selected{{/if}}>Raise Spirits</option>
+                                <option value="recuperate" {{#if (eq this.taskData.selectedAction 'recuperate')}}selected{{/if}}>Recuperate</option>
+                                <option value="revise-planning" {{#if (eq this.taskData.selectedAction 'revise-planning')}}selected{{/if}}>Revise Planning</option>
+                                <option value="trapping" {{#if (eq this.taskData.selectedAction 'trapping')}}selected{{/if}}>Trapping</option>
+                                <option value="self-improvement" {{#if (eq this.taskData.selectedAction 'self-improvement')}}selected{{/if}}>Self Improvement</option>
+                                <option value="scout-area" {{#if (eq this.taskData.selectedAction 'scout-area')}}selected{{/if}}>Scout the Area</option>
+                            </select>
+                        </div>
+                        {{/each}}
+                    </div>
+                </div>
+
+                {{!-- Watch Panel --}}
+                <div class="watch-panel">
+                    <h3>Watch</h3>
+                    <div class="watch-content">
+                        <div class="watch-list">
+                            {{#each watchingCharacters}}
+                            <div class="watch-member">
+                                <span class="character-name-watch"><i class="fas fa-eye"></i> {{this.name}}</span>
+                                <span class="fatigue-test">{{this.fatigueTest}}</span>
+                            </div>
+                            {{/each}}
+                            {{#if showInsufficientWatch}}
+                            <div class="watch-warning">
+                                <i class="fas fa-exclamation-triangle"></i> <strong>Insufficient Watch. Increased Danger.</strong>
+                            </div>
+                            {{/if}}
+                        </div>
+                        <div class="watch-requirements">
+                            {{#if showWatchSuccess}}
+                                <div class="watch-info success">
+                                    <i class="fas fa-check-circle"></i> <strong>An Average Endurance test is required</strong>
+                                </div>
+                            {{else if showWatchWarning}}
+                                <div class="watch-info warning">
+                                    <i class="fas fa-exclamation-triangle"></i> <strong>A Challenging Endurance test is required</strong>
+                                    {{#if hasRecuperate2Plus}}
+                                    <div class="watch-note">2+ recuperating: No fatigue roll needed</div>
+                                    {{/if}}
+                                </div>
+                            {{else if showWatchDanger}}
+                                <div class="watch-info danger">
+                                    <i class="fas fa-times-circle"></i> <strong>1 party member on watch: +1 fatigue</strong>
+                                    {{#if hasRecuperate1}}
+                                    <div class="watch-note">Recuperating: No fatigue but event roll +1</div>
+                                    {{/if}}
+                                </div>
+                            {{else}}
+                                <div class="watch-info">
+                                    <i class="fas fa-info-circle"></i> No one keeping watch
+                                </div>
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{/if}}
+
+            <div class="actions-grid">
+                {{!-- Setup Camp --}}
+                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-campground"></i> Setup Camp</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Outdoor Survival (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> Camp setup! -1 weariness/day, healing checks Challenging (+0)<br>
+                            <strong>Failure:</strong> Poor camp. Healing checks Hard (-10)
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="setup-camp">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="setup-camp" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Cook --}}
+                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-utensils"></i> Cook</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Trade (Cook) (Easy +40) or Outdoor Survival (Average +20)</div>
+                        <div class="action-description">
+                            <strong>2+ SL:</strong> -1 weariness<br>
+                            <strong>Critical/6+ SL:</strong> Set weariness to 0 OR spend 1 provision for -1 travel fatigue<br>
+                            <strong>Failure:</strong> Varies by SL (see rules)
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="cook">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="cook" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Hunt or Fish --}}
+                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-fish"></i> Hunt or Fish</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Outdoor Survival (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +1 provisions (+1 per 2 SL)<br>
+                            <strong>Critical:</strong> +2 additional provisions<br>
+                            <strong>Failure:</strong> Nothing found<br>
+                            <strong>Critical Fail:</strong> Injured! 1d10 damage
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="hunt">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="hunt" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Raise Spirits --}}
+                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-music"></i> Raise Spirits</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Entertain (Any) or Play (Any) (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> -1 weariness<br>
+                            <strong>Critical:</strong> -Fellowship Bonus weariness<br>
+                            <strong>Failure:</strong> No effect
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="raise-spirits">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="raise-spirits" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Recuperate --}}
+                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-bed"></i> Recuperate</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Endurance (Challenging +0 if camp setup, Hard -10 if not)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> Heal wounds = SL + TB<br>
+                            Allows body to recover from harsh conditions
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="recuperate">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="recuperate" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Revise Planning --}}
+                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-map-marked-alt"></i> Revise Planning</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Leadership (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +1 JP per SL, -1 max JP if not full<br>
+                            <strong>Critical:</strong> +1 bonus JP, +1 max JP if full<br>
+                            <strong>Failure:</strong> -1 max JP<br>
+                            <strong>Critical Fail:</strong> -2 max JP
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="revise-planning">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="revise-planning" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Trapping --}}
+                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-cut"></i> Trapping</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Set Trap (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +1 provisions (+1 per 2 SL)<br>
+                            <strong>Critical:</strong> +2 additional provisions<br>
+                            <strong>Failure:</strong> Nothing caught<br>
+                            <em>Once set, becomes free action on subsequent camp days</em>
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="trapping">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="trapping" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Self Improvement --}}
+                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-book-reader"></i> Self Improvement</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Pray or Lore (Any) (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> +10 to next check using chosen skill or related skill<br>
+                            <em>Example: Lore (Magic) can give +10 to channeling</em>
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="self-improvement">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="self-improvement" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{!-- Scout the Area --}}
+                <div class="action-card {{#unless (eq travel.status "camping")}}disabled{{/unless}}">
+                    <div class="action-header">
+                        <h3><i class="fas fa-eye"></i> Scout the Area</h3>
+                        <span class="action-cost">Free</span>
+                    </div>
+                    <div class="action-body">
+                        <div class="action-skill">Skill: Perception (Average +20)</div>
+                        <div class="action-description">
+                            <strong>Success:</strong> GM reveals days/JP until next event<br>
+                            <strong>Critical:</strong> GM reveals event, may spend 2 JP to choose "No Event"<br>
+                            <strong>Failure:</strong> Nothing found<br>
+                            <em>Expands vision one hex in all directions</em>
+                        </div>
+                        {{#if editable}}
+                        <div class="character-selector" data-action="scout-area">
+                            <label>Select Character:</label>
+                            <select class="action-character-select">
+                                <option value="">Choose character...</option>
+                                {{#each linkedCharacters}}
+                                <option value="{{this.id}}">{{this.name}}</option>
+                                {{/each}}
+                            </select>
+                            <button type="button" class="action-button" data-action="scout-area" {{#unless (eq travel.status "camping")}}disabled{{/unless}}>
+                                <i class="fas fa-dice-d20"></i> Roll
+                            </button>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {{!-- Weather & Events Tab --}}
+        <div class="tab weather" data-group="primary" data-tab="weather">
+            
+            <div class="weather-top-row">
+                {{!-- Left Panel: Current Weather Display --}}
+                <div class="weather-panel weather-display">
+                    <h3>{{localize "TRAVEL.Weather.CurrentWeather"}}</h3>
+                    
+                    <div class="weather-current">
+                        <div class="weather-item">
+                            <label>{{localize "TRAVEL.Overview.Temperature"}}</label>
+                            <select class="weather-override-select" data-weather-type="temperature" {{#unless editable}}disabled{{/unless}}>
+                                <option value="sweltering" {{#if (eq weather.current.temperature "sweltering")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.sweltering"}}</option>
+                                <option value="hot" {{#if (eq weather.current.temperature "hot")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.hot"}}</option>
+                                <option value="comfortable" {{#if (eq weather.current.temperature "comfortable")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.comfortable"}}</option>
+                                <option value="chilly" {{#if (eq weather.current.temperature "chilly")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.chilly"}}</option>
+                                <option value="bitter" {{#if (eq weather.current.temperature "bitter")}}selected{{/if}}>{{localize "TRAVEL.Weather.Temperature.bitter"}}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="weather-item">
+                            <label>{{localize "TRAVEL.Overview.Precipitation"}}</label>
+                            <select class="weather-override-select" data-weather-type="precipitation" {{#unless editable}}disabled{{/unless}}>
+                                <option value="none" {{#if (eq weather.current.precipitation "none")}}selected{{/if}}>{{localize "TRAVEL.Weather.Precipitation.none"}}</option>
+                                <option value="light" {{#if (eq weather.current.precipitation "light")}}selected{{/if}}>{{localize "TRAVEL.Weather.Precipitation.light"}}</option>
+                                <option value="heavy" {{#if (eq weather.current.precipitation "heavy")}}selected{{/if}}>{{localize "TRAVEL.Weather.Precipitation.heavy"}}</option>
+                                <option value="very-heavy" {{#if (eq weather.current.precipitation "very-heavy")}}selected{{/if}}>{{localize "TRAVEL.Weather.Precipitation.very-heavy"}}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="weather-item">
+                            <label>Visibility</label>
+                            <select class="weather-override-select" data-weather-type="visibility" {{#unless editable}}disabled{{/unless}}>
+                                <option value="clear" {{#if (eq weather.current.visibility "clear")}}selected{{/if}}>{{localize "TRAVEL.Weather.Visibility.clear"}}</option>
+                                <option value="moderate" {{#if (eq weather.current.visibility "moderate")}}selected{{/if}}>{{localize "TRAVEL.Weather.Visibility.moderate"}}</option>
+                                <option value="poor" {{#if (eq weather.current.visibility "poor")}}selected{{/if}}>{{localize "TRAVEL.Weather.Visibility.poor"}}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="weather-item">
+                            <label>Wind</label>
+                            <select class="weather-override-select" data-weather-type="wind" {{#unless editable}}disabled{{/unless}}>
+                                <option value="still" {{#if (eq weather.current.wind "still")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.still"}}</option>
+                                <option value="gentle" {{#if (eq weather.current.wind "gentle")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.gentle"}}</option>
+                                <option value="moderate" {{#if (eq weather.current.wind "moderate")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.moderate"}}</option>
+                                <option value="strong" {{#if (eq weather.current.wind "strong")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.strong"}}</option>
+                                <option value="very-strong" {{#if (eq weather.current.wind "very-strong")}}selected{{/if}}>{{localize "TRAVEL.Weather.Wind.very-strong"}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    {{!-- Weather Effects Display --}}
+                    <div class="weather-effects">
+                        <h4>{{localize "TRAVEL.Weather.Effects.Title"}}</h4>
+                        
+                        {{!-- Extreme Weather Warnings (at top when relevant) --}}
+                        {{#if weather.isBlizzard}}
+                        <div class="extreme-weather-warning blizzard-warning">
+                            <strong>⚠ BLIZZARD CONDITIONS</strong>
+                            <ul>
+                                <li>Movement speed reduced by 50%</li>
+                                <li>Must spend 1 JP per day to move (or gain +1 weariness if JP = 0)</li>
+                                <li>Visibility automatically set to Poor</li>
+                                <li>With gear: +1 exposure/day traveling</li>
+                                <li>Without gear: +3 exposure/day traveling</li>
+                                <li>Camping: No exposure gain/loss if camp setup, otherwise same as traveling</li>
+                            </ul>
+                        </div>
+                        {{else}}
+                        {{#if weather.isExtremeCold}}
+                        <div class="extreme-weather-warning extreme-cold-warning">
+                            <strong>⚠ EXTREME COLD CONDITIONS</strong>
+                            <ul>
+                                <li>With gear: +1 exposure/day traveling</li>
+                                <li>Without gear: +3 exposure/day traveling</li>
+                                <li>Camping: No exposure gain/loss if camp setup, otherwise same as traveling</li>
+                            </ul>
+                        </div>
+                        {{else}}
+                        {{#if weather.isThunderStorm}}
+                        <div class="extreme-weather-warning thunder-storm-warning">
+                            <strong>⚠ THUNDER STORM CONDITIONS</strong>
+                            <ul>
+                                <li>Traveling with gear: +1 weariness/day</li>
+                                <li>Traveling without gear: +2 weariness/day</li>
+                                <li>Camping with setup: No weariness</li>
+                                <li>Camping without setup: +1 weariness/day</li>
+                            </ul>
+                        </div>
+                        {{/if}}
+                        {{/if}}
+                        {{/if}}
+                        
+                        {{!-- Temperature Effects --}}
+                        <div class="effect-section">
+                            <strong>{{localize "TRAVEL.Weather.Effects.TemperatureEffects"}}</strong>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'sweltering')}}effect-inactive{{/unless}}">
+                                <strong>Sweltering:</strong> 2x provisions use, +2 weariness when JP reaches 0 and on event trigger
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'hot')}}effect-inactive{{/unless}}">
+                                <strong>Hot:</strong> +1 weariness when JP reaches 0 and on event trigger
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'comfortable')}}effect-inactive{{/unless}}">
+                                <strong>Comfortable:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'chilly')}}effect-inactive{{/unless}}">
+                                <strong>Chilly:</strong> +1 weariness when JP reaches 0 and on event trigger
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.temperature 'bitter')}}effect-inactive{{/unless}}">
+                                <strong>Bitter:</strong> 2x provisions use, +2 weariness when JP reaches 0 and on event trigger
+                            </div>
+                        </div>
+                        
+                        {{!-- Precipitation Effects --}}
+                        <div class="effect-section">
+                            <strong>{{localize "TRAVEL.Weather.Effects.PrecipitationEffects"}} (only with Chilly/Bitter temperature)</strong>
+                            <div class="effect-item {{#unless (eq weather.current.precipitation 'light')}}effect-inactive{{/unless}}">
+                                <strong>Light:</strong> +1 weariness
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.precipitation 'heavy')}}effect-inactive{{/unless}}">
+                                <strong>Heavy:</strong> +2 weariness
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.precipitation 'very-heavy')}}effect-inactive{{/unless}}">
+                                <strong>Very Heavy:</strong> +3 weariness
+                            </div>
+                        </div>
+                        
+                        {{!-- Visibility Effects --}}
+                        <div class="effect-section">
+                            <strong>{{localize "TRAVEL.Weather.Effects.VisibilityEffects"}}</strong>
+                            <div class="effect-item {{#unless (eq weather.current.visibility 'clear')}}effect-inactive{{/unless}}">
+                                <strong>Clear:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.visibility 'moderate')}}effect-inactive{{/unless}}">
+                                <strong>Moderate:</strong> -1 SL to all travel actions, Hunt/Fish, Scout Area, navigation, and perception checks
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.visibility 'poor')}}effect-inactive{{/unless}}">
+                                <strong>Poor:</strong> -2 SL to all travel actions, Hunt/Fish, Scout Area, navigation, and perception checks. -1 SL to ranged weapon skill checks
+                            </div>
+                        </div>
+                        
+                        {{!-- Wind Effects --}}
+                        <div class="effect-section">
+                            <strong>{{localize "TRAVEL.Weather.Effects.WindEffects"}}</strong>
+                            <div class="effect-item {{#unless (eq weather.current.wind 'still')}}effect-inactive{{/unless}}">
+                                <strong>Still:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.wind 'gentle')}}effect-inactive{{/unless}}">
+                                <strong>Gentle:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.wind 'moderate')}}effect-inactive{{/unless}}">
+                                <strong>Moderate:</strong> No effect
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.wind 'strong')}}effect-inactive{{/unless}}">
+                                <strong>Strong:</strong> -1 SL to ranged attacks
+                            </div>
+                            <div class="effect-item {{#unless (eq weather.current.wind 'very-strong')}}effect-inactive{{/unless}}">
+                                <strong>Very Strong:</strong> -2 SL to ranged attacks
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {{!-- Right Panel: Generation Conditions --}}
+                <div class="weather-panel weather-conditions">
+                    <h3>{{localize "TRAVEL.Weather.Conditions"}}</h3>
+                    
+                    <div class="condition-controls">
+                        <div class="condition-item">
+                            <label>{{localize "TRAVEL.Weather.Climate"}}</label>
+                            <select class="weather-condition-select" data-condition="climate" {{#unless editable}}disabled{{/unless}}>
+                                <option value="hot" {{#if (eq weather.conditions.climate "hot")}}selected{{/if}}>{{localize "TRAVEL.Weather.Climates.hot"}} (-2)</option>
+                                <option value="temperate" {{#if (eq weather.conditions.climate "temperate")}}selected{{/if}}>{{localize "TRAVEL.Weather.Climates.temperate"}} (+0)</option>
+                                <option value="cold" {{#if (eq weather.conditions.climate "cold")}}selected{{/if}}>{{localize "TRAVEL.Weather.Climates.cold"}} (+2)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="condition-item">
+                            <label>{{localize "TRAVEL.Weather.Season"}}</label>
+                            <select class="weather-condition-select" data-condition="season" {{#unless editable}}disabled{{/unless}}>
+                                <option value="spring" {{#if (eq weather.conditions.season "spring")}}selected{{/if}}>{{localize "TRAVEL.Weather.Seasons.spring"}} (+2)</option>
+                                <option value="summer" {{#if (eq weather.conditions.season "summer")}}selected{{/if}}>{{localize "TRAVEL.Weather.Seasons.summer"}} (+0)</option>
+                                <option value="autumn" {{#if (eq weather.conditions.season "autumn")}}selected{{/if}}>{{localize "TRAVEL.Weather.Seasons.autumn"}} (+2)</option>
+                                <option value="winter" {{#if (eq weather.conditions.season "winter")}}selected{{/if}}>{{localize "TRAVEL.Weather.Seasons.winter"}} (+4)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="condition-item">
+                            <label>{{localize "TRAVEL.Weather.Terrain"}}</label>
+                            <select class="weather-condition-select" data-condition="terrain" {{#unless editable}}disabled{{/unless}}>
+                                <option value="woods" {{#if (eq weather.conditions.terrain "woods")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.woods"}}</option>
+                                <option value="hills" {{#if (eq weather.conditions.terrain "hills")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.hills"}}</option>
+                                <option value="forest" {{#if (eq weather.conditions.terrain "forest")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.forest"}}</option>
+                                <option value="plains" {{#if (eq weather.conditions.terrain "plains")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.plains"}}</option>
+                                <option value="wetlands" {{#if (eq weather.conditions.terrain "wetlands")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.wetlands"}}</option>
+                                <option value="mountains" {{#if (eq weather.conditions.terrain "mountains")}}selected{{/if}}>{{localize "TRAVEL.Weather.Terrains.mountains"}} (+1 temp, +2 wind)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="modifier-display">
+                            <strong>Current Modifiers:</strong>
+                            <div>Temperature: {{weather.modifiers.temperature}}</div>
+                            <div>Precipitation: {{weather.modifiers.precipitation}}</div>
+                            <div>Wind: {{weather.modifiers.wind}}</div>
+                        </div>
+                        
+                        {{#if editable}}
+                        <button type="button" class="generate-weather-btn">
+                            <i class="fas fa-dice"></i> {{localize "TRAVEL.Weather.GenerateWeather"}}
+                        </button>
+                        {{/if}}
+                        
+                        {{!-- Exposure & Gear Section --}}
+                        <div class="exposure-gear-section">
+                            <h4>{{localize "TRAVEL.Weather.ExposureAndGear"}}</h4>
+                            
+                            <div class="gear-checkboxes">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="weather-gear-checkbox" data-gear="weatherAppropriateGear" {{#if weather.gear.weatherAppropriateGear}}checked{{/if}} {{#unless editable}}disabled{{/unless}}>
+                                    {{localize "TRAVEL.Weather.WeatherAppropriateGear"}}
+                                </label>
+                                
+                                <label class="checkbox-label">
+                                    <input type="checkbox" class="weather-gear-checkbox" data-gear="campSetup" {{#if weather.gear.campSetup}}checked{{/if}} {{#unless editable}}disabled{{/unless}}>
+                                    {{localize "TRAVEL.Weather.CampSetup"}}
+                                </label>
+                            </div>
+                            
+                            <div class="exposure-display">
+                                <div class="exposure-line">
+                                    <strong>{{localize "TRAVEL.Weather.ExposureTraveling"}}:</strong> {{weather.exposure.traveling}}/day
+                                </div>
+                                <div class="exposure-line">
+                                    <strong>{{localize "TRAVEL.Weather.ExposureCamping"}}:</strong> {{weather.exposure.camping}}/day
+                                </div>
+                                {{#if weather.exposure.explanation}}
+                                <div class="exposure-explanation">
+                                    {{weather.exposure.explanation}}
+                                </div>
+                                {{/if}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        {{!-- Events Tab --}}
+        <div class="tab events" data-group="primary" data-tab="events">
+            
+            <div class="events-container">
+                
+                {{!-- Top Row: Roll Event + Watch Status side by side --}}
+                <div class="events-top-row">
+                    
+                    {{!-- Event Roller Panel --}}
+                    <div class="events-section events-half">
+                        <h2>Roll Event</h2>
+                        
+                        <div class="event-roller">
+                            <div class="modifier-control">
+                                <label>Event Modifier:</label>
+                                <div class="modifier-buttons">
+                                    {{#if editable}}
+                                    <button type="button" class="modifier-btn" data-action="decrease">
+                                        <i class="fas fa-minus"></i> 10
+                                    </button>
+                                    {{/if}}
+                                    <span class="modifier-value">{{events.modifier}}</span>
+                                    {{#if editable}}
+                                    <button type="button" class="modifier-btn" data-action="increase">
+                                        <i class="fas fa-plus"></i> 10
+                                    </button>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            
+                            {{#if editable}}
+                            <button type="button" class="roll-event-btn">
+                                <i class="fas fa-dice-d20"></i> Roll Event (d100)
+                            </button>
+                            {{/if}}
+                            
+                            {{#if events.lastRoll}}
+                            <div class="last-roll">
+                                <strong>Last Roll:</strong> {{events.lastRoll.base}} + {{events.lastRoll.modifier}} = <strong>{{events.lastRoll.total}}</strong>
+                            </div>
+                            {{/if}}
+                        </div>
+                    </div>
+                    
+                    {{!-- Watch Warning Panel --}}
+                    <div class="events-section events-half">
+                        <h2>Watch Status</h2>
+                        
+                        <div class="watch-warning-panel">
+                            {{#if (eq travel.status "camping")}}
+                                {{#if (eq camp.watchCount 0)}}
+                                <div class="watch-alert danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>No Watch Set!</strong> Increase modifier by +20
+                                </div>
+                                {{else if (eq camp.watchCount 1)}}
+                                <div class="watch-alert warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Only 1 Character on Watch!</strong> Increase modifier by +10
+                                </div>
+                                {{else}}
+                                <div class="watch-alert success">
+                                    <i class="fas fa-check-circle"></i>
+                                    Watch is adequately staffed ({{camp.watchCount}} characters)
+                                </div>
+                                {{/if}}
+                            {{else}}
+                                <div class="watch-alert info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Watch warnings only apply when Status = Camping
+                                </div>
+                            {{/if}}
+                            
+                            <div class="watch-panel-link">
+                                <a class="tab-link" data-tab="camp-actions">
+                                    <i class="fas fa-arrow-right"></i> Go to Watch Panel (Camping Tab)
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                {{!-- Event Table --}}
+                <div class="events-section events-table-section">
+                    <h2>Event Table</h2>
+                    
+                    <div class="event-table-wrapper">
+                        <table class="event-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-roll">d100 Result</th>
+                                    <th class="col-category">Category</th>
+                                    <th class="col-event">Event</th>
+                                    <th class="col-description">Description/Effect</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each events.eventTable}}
+                                <tr class="event-row {{#if this.highlighted}}highlighted{{/if}}" data-min="{{this.min}}" data-max="{{this.max}}">
+                                    <td class="col-roll">{{this.range}}</td>
+                                    <td class="col-category">{{this.category}}</td>
+                                    <td class="col-event">{{this.event}}</td>
+                                    <td class="col-description">{{this.description}}</td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+
+        </div>
+
+    </section>
+
+</form>
