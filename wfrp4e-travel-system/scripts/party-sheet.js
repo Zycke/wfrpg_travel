@@ -250,11 +250,126 @@ export class PartySheet extends ActorSheet {
         }
         context.events = partyFlags.events || { modifier: 0, lastRoll: null };
         
+        // Event Table Data - will be populated with actual table
+        context.events.eventTable = this._getEventTable();
+        
+        // Highlight rolled event if there's a last roll
+        if (context.events.lastRoll) {
+            const rollTotal = context.events.lastRoll.total;
+            context.events.eventTable.forEach(row => {
+                row.highlighted = (rollTotal >= row.min && rollTotal <= row.max);
+            });
+        }
+        
         // Add system and user info
         context.isGM = game.user.isGM;
         context.editable = this.isEditable;
         
         return context;
+    }
+    
+    /**
+     * Get event table data
+     */
+    _getEventTable() {
+        return [
+            { 
+                range: "1-8", 
+                min: 1, 
+                max: 8, 
+                category: "Fortune", 
+                event: "Lucky Find", 
+                description: "Stumble upon an old camp site or cache of supplies. Effect: +1 Camp Supplies, +1 JP" 
+            },
+            { 
+                range: "9-16", 
+                min: 9, 
+                max: 16, 
+                category: "Fortune", 
+                event: "Nature's Bounty", 
+                description: "The party finds a surprising amount of foragable food right along the path. Effect: +1 Provisions" 
+            },
+            { 
+                range: "17-25", 
+                min: 17, 
+                max: 25, 
+                category: "Fortune", 
+                event: "Beautiful Day", 
+                description: "The sun is shining, the skies are clear, and the path is clear. Effect: -1 Weariness" 
+            },
+            { 
+                range: "26-33", 
+                min: 26, 
+                max: 33, 
+                category: "Misfortune", 
+                event: "Frayed Nerves", 
+                description: "Tension boils over among the party as exhaustion sets in. Effect: +1 Weariness" 
+            },
+            { 
+                range: "34-41", 
+                min: 34, 
+                max: 41, 
+                category: "Misfortune", 
+                event: "Lost Provisions", 
+                description: "Provisions are lost to spoilage, wild animals, etc. Effect: -1 Provisions, -1d3 Provisions (Failure)" 
+            },
+            { 
+                range: "42-50", 
+                min: 42, 
+                max: 50, 
+                category: "Misfortune", 
+                event: "Broken Equipment", 
+                description: "A strap, wagon axle, or pack harness breaks mid-travel. Effect: +1 Weariness, Do not move that day as repairs are lengthier than expected (On Failure)" 
+            },
+            { 
+                range: "51-58", 
+                min: 51, 
+                max: 58, 
+                category: "Encounter", 
+                event: "Other Travelers", 
+                description: "The party runs into another group of creatures. These may be human (or not) and could be friendly or hostile. Effect: Social encounter" 
+            },
+            { 
+                range: "59-66", 
+                min: 59, 
+                max: 66, 
+                category: "Navigation", 
+                event: "Fork in the Path", 
+                description: "Unexpected fork in the path and the party isn't sure which is the correct way to go. Effect: Lost! on failure. When Lost!, move to a random adjacent hex" 
+            },
+            { 
+                range: "67-75", 
+                min: 67, 
+                max: 75, 
+                category: "Terrain", 
+                event: "Broken Terrain", 
+                description: "The terrain is suddenly extremely difficult to bypass. A river has overflown, a section of trail has collapsed, etc. You must find a way to bypass the problem area or find a new route. Effect: +1 Weariness, Must move to a different hex other than the one originally planned (on failure)" 
+            },
+            { 
+                range: "76-83", 
+                min: 76, 
+                max: 83, 
+                category: "Hazard", 
+                event: "Sudden Illness", 
+                description: "Exhaustion, foul water, or biting insects sap the party's strength. (GM picks a disease to roll against) Effect: +1 Weariness, Gain disease on failure" 
+            },
+            { 
+                range: "84-91", 
+                min: 84, 
+                max: 91, 
+                category: "Weather", 
+                event: "Sudden Storm", 
+                description: "The weather takes a sudden turn for the worse and a Storm appears. In cold weather, this becomes a Blizzard. Effect: Weather becomes a Thunderstorm. If temperature is Bitter, weather becomes a Blizzard" 
+            },
+            { 
+                range: "92-100", 
+                min: 92, 
+                max: 100, 
+                category: "Combat", 
+                event: "Enemies", 
+                description: "A small group of enemies is encountered appropriate to the party's location. Effect: Combat encounter. Chance to become Ambushed!" 
+            }
+        ];
     }
     
     /** @override */
@@ -1867,13 +1982,33 @@ export class PartySheet extends ActorSheet {
             }
         }
         
-        // Step 5: Daily weariness from hunger + exposure + blizzard
-        let totalWearinessGain = newHunger + newExposure + blizzardWeariness;
+        // Step 4b: Thunder Storm weariness
+        let thunderStormWeariness = 0;
+        const isThunderStorm = extremeWeather.type === 'thunder-storm';
+        const hasGear = this.actor.getFlag('wfrp4e-travel-system', 'weather.gear.weatherAppropriateGear') || false;
+        const hasCampSetup = this.actor.getFlag('wfrp4e-travel-system', 'weather.gear.campSetup') || false;
+        
+        if (isThunderStorm) {
+            if (isTraveling) {
+                thunderStormWeariness = hasGear ? 1 : 2;
+                summary.push(`Thunder Storm: +${thunderStormWeariness} weariness (${hasGear ? 'with gear' : 'without gear'})`);
+            } else {
+                // Camping
+                if (!hasCampSetup) {
+                    thunderStormWeariness = 1;
+                    summary.push(`Thunder Storm: +1 weariness (no camp setup)`);
+                }
+            }
+        }
+        
+        // Step 5: Daily weariness from hunger + exposure + blizzard + thunder storm
+        let totalWearinessGain = newHunger + newExposure + blizzardWeariness + thunderStormWeariness;
         if (totalWearinessGain > 0) {
             let parts = [];
             if (newHunger > 0) parts.push(`Hunger: ${newHunger}`);
             if (newExposure > 0) parts.push(`Exposure: ${newExposure}`);
             if (blizzardWeariness > 0) parts.push(`Blizzard: ${blizzardWeariness}`);
+            if (thunderStormWeariness > 0) parts.push(`Thunder Storm: ${thunderStormWeariness}`);
             summary.push(`Daily strain: +${totalWearinessGain} weariness (${parts.join(', ')})`);
         }
         
