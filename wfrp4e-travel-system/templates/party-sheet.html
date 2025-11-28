@@ -1425,6 +1425,18 @@
                                 <li>Camping: No exposure gain/loss if camp setup, otherwise same as traveling</li>
                             </ul>
                         </div>
+                        {{else}}
+                        {{#if weather.isThunderStorm}}
+                        <div class="extreme-weather-warning thunder-storm-warning">
+                            <strong>⚠ THUNDER STORM CONDITIONS</strong>
+                            <ul>
+                                <li>Traveling with gear: +1 weariness/day</li>
+                                <li>Traveling without gear: +2 weariness/day</li>
+                                <li>Camping with setup: No weariness</li>
+                                <li>Camping without setup: +1 weariness/day</li>
+                            </ul>
+                        </div>
+                        {{/if}}
                         {{/if}}
                         {{/if}}
                         
@@ -1588,76 +1600,109 @@
             
             <div class="events-container">
                 
-                {{!-- Event Roller Panel --}}
-                <div class="events-section">
-                    <h2>Roll Event</h2>
+                {{!-- Top Row: Roll Event + Watch Status side by side --}}
+                <div class="events-top-row">
                     
-                    <div class="event-roller">
-                        <div class="modifier-control">
-                            <label>Event Modifier:</label>
-                            <div class="modifier-buttons">
-                                {{#if editable}}
-                                <button type="button" class="modifier-btn" data-action="decrease">
-                                    <i class="fas fa-minus"></i> 10
-                                </button>
-                                {{/if}}
-                                <span class="modifier-value">{{events.modifier}}</span>
-                                {{#if editable}}
-                                <button type="button" class="modifier-btn" data-action="increase">
-                                    <i class="fas fa-plus"></i> 10
-                                </button>
-                                {{/if}}
-                            </div>
-                        </div>
+                    {{!-- Event Roller Panel --}}
+                    <div class="events-section events-half">
+                        <h2>Roll Event</h2>
                         
-                        {{#if editable}}
-                        <button type="button" class="roll-event-btn">
-                            <i class="fas fa-dice-d20"></i> Roll Event (d100)
-                        </button>
-                        {{/if}}
-                        
-                        {{#if events.lastRoll}}
-                        <div class="last-roll">
-                            <strong>Last Roll:</strong> {{events.lastRoll.base}} + {{events.lastRoll.modifier}} = {{events.lastRoll.total}}
-                        </div>
-                        {{/if}}
-                    </div>
-                </div>
-                
-                {{!-- Watch Warning Panel --}}
-                <div class="events-section">
-                    <h2>Watch Status</h2>
-                    
-                    <div class="watch-warning-panel">
-                        {{#if (eq travel.status "camping")}}
-                            {{#if (eq watchCount 0)}}
-                            <div class="watch-alert danger">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <strong>No Watch Set!</strong> Increase modifier by +20
+                        <div class="event-roller">
+                            <div class="modifier-control">
+                                <label>Event Modifier:</label>
+                                <div class="modifier-buttons">
+                                    {{#if editable}}
+                                    <button type="button" class="modifier-btn" data-action="decrease">
+                                        <i class="fas fa-minus"></i> 10
+                                    </button>
+                                    {{/if}}
+                                    <span class="modifier-value">{{events.modifier}}</span>
+                                    {{#if editable}}
+                                    <button type="button" class="modifier-btn" data-action="increase">
+                                        <i class="fas fa-plus"></i> 10
+                                    </button>
+                                    {{/if}}
+                                </div>
                             </div>
-                            {{else if (eq watchCount 1)}}
-                            <div class="watch-alert warning">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                <strong>Only 1 Character on Watch!</strong> Increase modifier by +10
-                            </div>
-                            {{else}}
-                            <div class="watch-alert success">
-                                <i class="fas fa-check-circle"></i>
-                                Watch is adequately staffed ({{watchCount}} characters)
+                            
+                            {{#if editable}}
+                            <button type="button" class="roll-event-btn">
+                                <i class="fas fa-dice-d20"></i> Roll Event (d100)
+                            </button>
+                            {{/if}}
+                            
+                            {{#if events.lastRoll}}
+                            <div class="last-roll">
+                                <strong>Last Roll:</strong> {{events.lastRoll.base}} + {{events.lastRoll.modifier}} = <strong>{{events.lastRoll.total}}</strong>
                             </div>
                             {{/if}}
-                        {{else}}
-                            <div class="watch-alert info">
-                                <i class="fas fa-info-circle"></i>
-                                Watch warnings only apply when Status = Camping
-                            </div>
-                        {{/if}}
-                        
-                        <div class="watch-panel-link">
-                            <a class="tab-link" data-tab="camp-actions">
-                                <i class="fas fa-arrow-right"></i> Go to Watch Panel (Camping Tab)
-                            </a>
                         </div>
+                    </div>
+                    
+                    {{!-- Watch Warning Panel --}}
+                    <div class="events-section events-half">
+                        <h2>Watch Status</h2>
+                        
+                        <div class="watch-warning-panel">
+                            {{#if (eq travel.status "camping")}}
+                                {{#if (eq camp.watchCount 0)}}
+                                <div class="watch-alert danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>No Watch Set!</strong> Increase modifier by +20
+                                </div>
+                                {{else if (eq camp.watchCount 1)}}
+                                <div class="watch-alert warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Only 1 Character on Watch!</strong> Increase modifier by +10
+                                </div>
+                                {{else}}
+                                <div class="watch-alert success">
+                                    <i class="fas fa-check-circle"></i>
+                                    Watch is adequately staffed ({{camp.watchCount}} characters)
+                                </div>
+                                {{/if}}
+                            {{else}}
+                                <div class="watch-alert info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Watch warnings only apply when Status = Camping
+                                </div>
+                            {{/if}}
+                            
+                            <div class="watch-panel-link">
+                                <a class="tab-link" data-tab="camp-actions">
+                                    <i class="fas fa-arrow-right"></i> Go to Watch Panel (Camping Tab)
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+                {{!-- Event Table --}}
+                <div class="events-section events-table-section">
+                    <h2>Event Table</h2>
+                    
+                    <div class="event-table-wrapper">
+                        <table class="event-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-roll">d100 Result</th>
+                                    <th class="col-category">Category</th>
+                                    <th class="col-event">Event</th>
+                                    <th class="col-description">Description/Effect</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each events.eventTable}}
+                                <tr class="event-row {{#if this.highlighted}}highlighted{{/if}}" data-min="{{this.min}}" data-max="{{this.max}}">
+                                    <td class="col-roll">{{this.range}}</td>
+                                    <td class="col-category">{{this.category}}</td>
+                                    <td class="col-event">{{this.event}}</td>
+                                    <td class="col-description">{{this.description}}</td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 
